@@ -13,7 +13,7 @@ class App:
         print('🚀 Inicializa rotas!')
         init_controllers(self.bottle)
 
-aaaa
+
     def run(self):
         self.setup_routes()
         self.bottle.run(
