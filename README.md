@@ -87,6 +87,13 @@ python main.py
 
 ---
 
+5. A fazer:
+adiciona aqui o que tem a fazer christian:
+1 -- modelagem
+2 -- 
+
+
+
 ## ✍️ Personalização
 Para adicionar novos modelos (ex: Atividades):
 
