@@ -109,9 +109,11 @@ Para adicionar novos modelos (ex: Atividades):
 
 # A FAZER:
 
-- Docker
-- Deploy em um server
-- Database
+- Docker []
+- Deploy em um server 
+- Database (sqlite) 
+- Tratanento de imagens na DB
+- Usuarios e admins
 - Tratamento de erros
 - Diagrama
 - Estilização de CSS
