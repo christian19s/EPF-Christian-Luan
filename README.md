@@ -111,13 +111,13 @@ Para adicionar novos modelos (ex: Atividades):
 
 - Docker []
 - Deploy em um server 
-- Database (sqlite) 
+- Database, portar o codigo existente para sql (sqlite) 
 - Tratanento de imagens na DB
 - Usuarios e admins
 - Tratamento de erros
 - Diagrama
 - Estilização de CSS
-- JS e HTML
+- JS e HTML da wiki
 
 
 ## 🧠 Autor e Licença
