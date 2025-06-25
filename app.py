@@ -1,18 +1,20 @@
 from bottle import Bottle
+
 from config import Config
+from db import init_db
+
 
 class App:
     def __init__(self):
         self.bottle = Bottle()
         self.config = Config()
-
+        init_db()
 
     def setup_routes(self):
         from controllers import init_controllers
 
-        print('🚀 Inicializa rotas!')
+        print("🚀 Inicializa rotas!")
         init_controllers(self.bottle)
-
 
     def run(self):
         self.setup_routes()
@@ -20,7 +22,7 @@ class App:
             host=self.config.HOST,
             port=self.config.PORT,
             debug=self.config.DEBUG,
-            reloader=self.config.RELOADER
+            reloader=self.config.RELOADER,
         )
 
 
