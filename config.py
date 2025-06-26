@@ -1,9 +1,10 @@
 import os
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PLOAD_DIR = os.path.join(BASE_DIR, "uploads", "profiles")
+
 
 class Config:
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
     # Configurações do servidor
     HOST = "0.0.0.0"
     PORT = int(os.environ.get("PORT", 8080))
@@ -14,6 +15,6 @@ class Config:
     TEMPLATE_PATH = os.path.join(BASE_DIR, "views")
     STATIC_PATH = os.path.join(BASE_DIR, "static")
     DATA_PATH = os.path.join(BASE_DIR, "data")
-
+    DB_PATH = os.path.join(BASE_DIR, DATA_PATH, "db")
     # Outras configurações
-    SECRET_KEY = "sua-chave-secreta-aqui"
+    SECRET_KEY = "9fd7c7658bc3640c974f93e9b69f1d17eb1bf812ab53ca9350250c6b51625bc2"

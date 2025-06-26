@@ -1,11 +1,12 @@
 import os
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 
 # Get absolute path to data directory
 BASE_DIR = Path(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = BASE_DIR / "data"
-DB_PATH = DATA_DIR / "app.db"
+DB_PATH = DATA_DIR / "wiki.db"
 SCHEMA_PATH = DATA_DIR / "schema.sql"
 
 
@@ -21,13 +22,13 @@ def get_db_connection():
 
 
 def init_db():
-    with get_db_connection() as conn:
+    with closing(get_db_connection()) as conn:
         # Only create if schema exists
         if SCHEMA_PATH.exists():
             with open(SCHEMA_PATH, "r") as f:
                 conn.executescript(f.read())
             conn.commit()
-            print(f"Database initialized at: {DB_PATH}")
+            print(f" Database initialized at: {DB_PATH}")
         else:
             print(f"Schema file not found at {SCHEMA_PATH}")
 
