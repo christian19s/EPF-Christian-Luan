@@ -113,7 +113,12 @@ Para adicionar novos modelos (ex: Atividades):
 - Deploy em um server 
 - Database, portar o codigo existente para sql (sqlite) 
 - Tratanento de imagens na DB
-- Usuarios e admins
+- Usuarios e admins:
+  - sistema de autenticação
+  - sistema de verificaçao de usuarios
+- template da wiki funcional onde um usuario autenticado pode criar uma wiki:
+  - deixar o editor customizar a wiki
+  - salvar tudo isso na database de forma correta
 - Tratamento de erros
 - Diagrama
 - Estilização de CSS
