@@ -10,16 +10,19 @@ class BaseController:
         """Configura rotas básicas comuns a todos os controllers"""
         self.app.route("/", method="GET", callback=self.home_redirect)
         self.app.route("/helper", method=["GET"], callback=self.helper)
-
+        self.app.route("/testing", method=["GET"], callback=self.test)
         # Rota para arquivos estáticos (CSS, JS, imagens)
         self.app.route("/static/<filename:path>", callback=self.serve_static)
 
     def home_redirect(self):
         """Redireciona a rota raiz para /users"""
-        return self.redirect("/user")
+        return self.redirect("/home")
 
     def helper(self):
         return self.render("helper-final")
+
+    def test(self):
+        return self.render("testing")
 
     def serve_static(self, filename):
         """Serve arquivos estáticos da pasta static/"""

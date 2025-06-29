@@ -2,13 +2,11 @@ import json
 import os
 from contextlib import closing
 
-import bcrypt  # Corrected import name
-from db import get_db_connection
+import bcrypt
+from config import BASE_DIR, UPLOAD_DIR
+from data import get_db_connection
 
 from .permSystem import PermissionSystem
-
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-UPLOAD_DIR = os.path.join(BASE_DIR, "uploads", "profiles")
 
 
 def generate_password_hash(password):
@@ -82,7 +80,6 @@ class AuthUser:
             raise ValueError(f"Invalid role: {role_name}")
         self.wiki_roles[wiki_id] = role_name
 
-        # Update database
         with closing(get_db_connection()) as conn:
             cursor = conn.cursor()
             cursor.execute(
@@ -94,7 +91,6 @@ class AuthUser:
     def get_profile_picture_url(self):
         """Get URL for profile picture with OS-agnostic path handling"""
         if self.profile_picture:
-            # Use forward slashes for URLs regardless of OS
             return os.path.join(
                 "/", "uploads", "profiles", self.profile_picture
             ).replace("\\", "/")

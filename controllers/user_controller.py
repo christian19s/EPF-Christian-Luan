@@ -1,8 +1,12 @@
 import os
 import secrets
+from contextlib import closing
 
 from bottle import Bottle, redirect, request, response, template
-from models.auth_user import UPLOAD_DIR, AuthUser
+from config import UPLOAD_DIR
+from data import get_db_connection
+from models import permSystem
+from models.auth_user import AuthUser
 from services.user_service import UserService
 
 from .base_controller import BaseController
@@ -14,7 +18,7 @@ class UserController(BaseController):
     def __init__(self, app):
         super().__init__(app)
         self.setup_routes()
-        self.user_service = UserService()
+        self.UserService = UserService()
 
     # Helper for profile picture uploads
     def _handle_profile_picture_upload(self, old_filename=None):
@@ -59,7 +63,7 @@ class UserController(BaseController):
     #    return self.service.login()
 
     def list_users(self):
-        users = self.user_service.get_all()
+        users = self.UserService.get_all()
         return self.render("users", users=users)
 
     def add_user(self):
@@ -76,7 +80,7 @@ class UserController(BaseController):
             profile_picture = self._handle_profile_picture_upload()
 
             # Create new user
-            self.user_service.create_user(
+            self.UserService.create_user(
                 username=username,
                 email=email,
                 password=password,
@@ -86,7 +90,7 @@ class UserController(BaseController):
             self.redirect("/users")
 
     def edit_user(self, user_id):
-        user = self.user_service.get_by_id(user_id)
+        user = self.UserService.get_by_id(user_id)
         if not user:
             return "Usuário não encontrado"
 
@@ -103,7 +107,7 @@ class UserController(BaseController):
             profile_picture = self._handle_profile_picture_upload(user.profile_picture)
 
             # Update user
-            self.user_service.update_user(
+            self.UserService.update_user(
                 user_id=user_id,
                 username=username,
                 email=email,
@@ -114,7 +118,7 @@ class UserController(BaseController):
             self.redirect("/users")
 
     def delete_user(self, user_id):
-        self.user_service.delete_user(user_id)
+        self.UserService.delete_user(user_id)
         self.redirect("/users")
 
 
@@ -126,13 +130,11 @@ def login():
         password = request.forms.get("password")
 
         # Authenticate user
-        user = AuthUser.authenticate(username, password)
+        user = AuthUser.is_authenticated(username)
 
         if user:
             # Set session cookie
-            response.set_cookie(
-                "user_id", str(user.id), path="/", secret=YOUR_SECRET_KEY
-            )
+            response.set_cookie("user_id", str(user.id), path="/", secret=SECRET_KEY)
 
             # Update last login
             with closing(get_db_connection()) as conn:
@@ -166,14 +168,14 @@ def register():
             error = "As senhas não coincidem."
         else:
             # Check if username/email exists
-            if user_service.username_exists(username):
+            if UserService.username_exists(username):
                 error = "Nome de usuário já está em uso."
-            elif user_service.email_exists(email):
+            elif UserService.email_exists(email):
                 error = "Email já está em uso."
             else:
                 # Create new user
                 password_hash = generate_password_hash(password)
-                user_id = user_service.create_user(
+                user_id = UserService.create_user(
                     username=username,
                     email=email,
                     password_hash=password_hash,

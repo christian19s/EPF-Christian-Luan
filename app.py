@@ -1,7 +1,7 @@
 from bottle import Bottle
 
 from config import Config
-from db import init_db
+from data import init_db
 
 
 class App:

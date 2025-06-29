@@ -3,14 +3,14 @@ import os
 from contextlib import closing
 
 from bottle import Bottle
-
-from db import get_db_connection
+from data import get_db_connection
 from models.auth_user import AuthUser, generate_password_hash, verify_password
 
 user_routes = Bottle()
 
 
 class UserService:
+
     def get_all(self):
         with closing(get_db_connection()) as conn:
             cursor = conn.cursor()
@@ -39,7 +39,13 @@ class UserService:
             return AuthUser(**user_data)
 
     def create_user(
-        self, username, email, password, birthdate=None, profile_picture=None
+        self,
+        username,
+        email,
+        password,
+        birthdate=None,
+        profile_picture=None,
+        role="viewe",
     ):
         # Generate password hash
         password_hash = generate_password_hash(password)
@@ -60,6 +66,9 @@ class UserService:
                 ),
             )
             conn.commit()
+
+    def username_exists(self):
+        return
 
     def update_user(
         self,
