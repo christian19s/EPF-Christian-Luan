@@ -3,12 +3,14 @@ CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
     email TEXT UNIQUE NOT NULL,
+    permissions TEXT NOT NULL,
     password_hash TEXT NOT NULL,
     birthdate TEXT,
     profile_picture TEXT,
     is_admin BOOLEAN DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_login TIMESTAMP
+    last_login TIMESTAMP,
+    wiki_roles TEXT NOT NULL DEFAULT '{}' 
 );
 
 CREATE TABLE IF NOT EXISTS wikis (

@@ -43,7 +43,7 @@ class WikiPage:
         created_at=None,
         updated_at=None,
         tags=None,
-        user_id=None,
+        creator_id=None,
     ):
         self.id = id
         self.wiki_id = wiki_id
@@ -52,7 +52,7 @@ class WikiPage:
         self.created_at = created_at or datetime.now()
         self.updated_at = updated_at or datetime.now()
         self.tags = tags or []
-        self.user_id = user_id
+        self.creator_id = creator_id
         self.revisions = []
 
     def add_revision(self, content, user_id):
