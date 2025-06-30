@@ -11,12 +11,17 @@ class BaseController:
         self.app.route("/", method="GET", callback=self.home_redirect)
         self.app.route("/helper", method=["GET"], callback=self.helper)
         self.app.route("/testing", method=["GET"], callback=self.test)
+        self.app.route("/home", methos=["GET"], callback=self.home)
         # Rota para arquivos estáticos (CSS, JS, imagens)
         self.app.route("/static/<filename:path>", callback=self.serve_static)
+        
 
     def home_redirect(self):
-        """Redireciona a rota raiz para /users"""
+        """Redireciona a rota raiz para /home"""
         return self.redirect("/home")
+
+    def home(self):
+        return self.render("home")
 
     def helper(self):
         return self.render("helper-final")
