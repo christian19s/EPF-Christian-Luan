@@ -1,8 +1,12 @@
 import os
 import secrets
+from contextlib import closing
 
 from bottle import Bottle, redirect, request, response, template
-from models.auth_user import UPLOAD_DIR, AuthUser
+from config import SECRET_KEY, UPLOAD_DIR
+from data import get_db_connection
+from models.user import AuthUser
+from services.exceptions import AuthenticationFailed, DuplicateUser, UserNotFound
 from services.user_service import UserService
 
 from .base_controller import BaseController
@@ -53,143 +57,192 @@ class UserController(BaseController):
         self.app.route(
             "/users/delete/<user_id:int>", method="POST", callback=self.delete_user
         )
-        self.app.route("/login")
-
-    #   def login():
-    #    return self.service.login()
+        self.app.route("/login", method=["GET", "POST"], callback=self.login)
+        self.app.route("/register", method=["GET", "POST"], callback=self.register)
 
     def list_users(self):
-        users = self.user_service.get_all()
-        return self.render("users", users=users)
+        try:
+            users = self.user_service.get_all_users()
+            return self.render("users", users=users)
+        except Exception as e:
+            return self.render_error(f"Error loading users: {str(e)}")
 
     def add_user(self):
         if request.method == "GET":
-            return self.render("user_form", user=None, action="/users/add")
-        else:
-            # Extract form data
-            username = request.forms.get("username")
-            email = request.forms.get("email")
-            password = request.forms.get("password")
-            birthdate = request.forms.get("birthdate")
+            return self.render("user_form", user=None, action="/users/add", errors=None)
 
-            # Handle profile picture
-            profile_picture = self._handle_profile_picture_upload()
+        # Extract form data
+        username = request.forms.get("username", "").strip()
+        email = request.forms.get("email", "").strip()
+        password = request.forms.get("password", "").strip()
+        birthdate = request.forms.get("birthdate", "").strip()
+        profile_picture = self._handle_profile_picture_upload()
 
+        # Validate inputs
+        errors = []
+        if not username:
+            errors.append("Username is required")
+        if not email:
+            errors.append("Email is required")
+        if not password:
+            errors.append("Password is required")
+
+        if errors:
+            return self.render(
+                "user_form", user=None, action="/users/add", errors=errors
+            )
+
+        try:
             # Create new user
             self.user_service.create_user(
                 username=username,
                 email=email,
                 password=password,
-                birthdate=birthdate,
+                birthdate=birthdate or None,
                 profile_picture=profile_picture,
             )
-            self.redirect("/users")
+            return redirect("/users")
+        except DuplicateUser as e:
+            errors = [str(e)]
+            return self.render(
+                "user_form", user=None, action="/users/add", errors=errors
+            )
+        except Exception as e:
+            errors = [f"Error creating user: {str(e)}"]
+            return self.render(
+                "user_form", user=None, action="/users/add", errors=errors
+            )
 
     def edit_user(self, user_id):
-        user = self.user_service.get_by_id(user_id)
-        if not user:
-            return "Usuário não encontrado"
+        try:
+            user = self.user_service.get_user_by_id(user_id)
+            if not user:
+                return self.render_error("User not found")
+        except UserNotFound:
+            return self.render_error("User not found")
 
         if request.method == "GET":
-            return self.render("user_form", user=user, action=f"/users/edit/{user_id}")
-        else:
-            # Extract form data
-            username = request.forms.get("username")
-            email = request.forms.get("email")
-            password = request.forms.get("password")
-            birthdate = request.forms.get("birthdate")
+            return self.render(
+                "user_form", user=user, action=f"/users/edit/{user_id}", errors=None
+            )
 
-            # Handle profile picture
-            profile_picture = self._handle_profile_picture_upload(user.profile_picture)
+        # Extract form data
+        username = request.forms.get("username", "").strip()
+        email = request.forms.get("email", "").strip()
+        birthdate = request.forms.get("birthdate", "").strip()
+        profile_picture = self._handle_profile_picture_upload(user.profile_picture)
 
-            # Update user
-            self.user_service.update_user(
+        # Validate inputs
+        errors = []
+        if not username:
+            errors.append("Username is required")
+        if not email:
+            errors.append("Email is required")
+
+        if errors:
+            return self.render(
+                "user_form", user=user, action=f"/users/edit/{user_id}", errors=errors
+            )
+
+        try:
+            # Update user profile
+            self.user_service.update_user_profile(
                 user_id=user_id,
                 username=username,
                 email=email,
-                password=password,  # Will be hashed if provided
-                birthdate=birthdate,
+                birthdate=birthdate or None,
                 profile_picture=profile_picture,
             )
-            self.redirect("/users")
-
-    def delete_user(self, user_id):
-        self.user_service.delete_user(user_id)
-        self.redirect("/users")
-
-
-@user_routes.route("/login", method=["GET", "POST"])
-def login():
-    error = None
-    if request.method == "POST":
-        username = request.forms.get("username")
-        password = request.forms.get("password")
-
-        # Authenticate user
-        user = AuthUser.authenticate(username, password)
-
-        if user:
-            # Set session cookie
-            response.set_cookie(
-                "user_id", str(user.id), path="/", secret=YOUR_SECRET_KEY
+            return redirect("/users")
+        except Exception as e:
+            errors = [f"Error updating user: {str(e)}"]
+            return self.render(
+                "user_form", user=user, action=f"/users/edit/{user_id}", errors=errors
             )
 
-            # Update last login
-            with closing(get_db_connection()) as conn:
-                cursor = conn.cursor()
-                cursor.execute(
-                    "UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?",
-                    (user.id,),
-                )
-                conn.commit()
+    def delete_user(self, user_id):
+        try:
+            self.user_service.delete_user(user_id)
+            return redirect("/users")
+        except Exception as e:
+            return self.render_error(f"Error deleting user: {str(e)}")
 
-            redirect("/dashboard")
-        else:
-            error = "Credenciais inválidas. Por favor tente novamente."
-
-    return template("login", error=error)
-
-
-@user_routes.route("/register", method=["GET", "POST"])
-def register():
-    error = None
-    if request.method == "POST":
-        username = request.forms.get("username")
-        email = request.forms.get("email")
-        password = request.forms.get("password")
-        confirm_password = request.forms.get("confirm_password")
-
-        # Basic validation
-        if not all([username, email, password, confirm_password]):
-            error = "Todos os campos são obrigatórios."
-        elif password != confirm_password:
-            error = "As senhas não coincidem."
-        else:
-            # Check if username/email exists
-            if user_service.username_exists(username):
-                error = "Nome de usuário já está em uso."
-            elif user_service.email_exists(email):
-                error = "Email já está em uso."
-            else:
-                # Create new user
-                password_hash = generate_password_hash(password)
-                user_id = user_service.create_user(
-                    username=username,
-                    email=email,
-                    password_hash=password_hash,
-                    role="user",  # Default role
-                )
-
-                if user_id:
-                    # Auto-login after registration
+    def login(self):
+        """Handle user login"""
+        error = None
+        if request.method == "POST":
+            print("Form data:", request.forms)
+            username = request.forms.get("username", "").strip()
+            password = request.forms.get("password", "").strip()
+            print(f"Username: '{username}', Password: '{password}'")
+            try:
+                # Authenticate user
+                print("trying to auth user")
+                print(f"Login attempt for: {username}")
+                print(f"Login attempt - Username: {username}, Password: {password}")
+                user = self.user_service.authenticate_user(username, password)
+                print(f"Authentication result: {user.id if user else 'None'}")
+                if user:
+                    # Set session cookie
                     response.set_cookie(
-                        "user_id", str(user_id), path="/", secret=SECRET_KEY
+                        "user_id", str(user.id), path="/", secret=SECRET_KEY
                     )
-                    redirect("/dashboard")
-                else:
-                    error = "Erro ao criar conta. Por favor tente novamente."
 
-    return template("register", error=error)
+                    # Update last login
+                    # user.update_last_login()
+
+                    print("logged in baby!")
+                    # return redirect("/dashboard")
+
+                else:
+                    error = "Invalid credentials. Please try again."
+            except AuthenticationFailed as e:
+                error = str(e)
+            except Exception as e:
+                error = f"Login error: {str(e)}"
+                print("something went wrong")
+        return self.render("login", error=error)
+
+    def register(self):
+        """Handle user registration"""
+        error = None
+        if request.method == "POST":
+            username = request.forms.get("username", "").strip()
+            email = request.forms.get("email", "").strip()
+            password = request.forms.get("password", "").strip()
+            confirm_password = request.forms.get("confirm_password", "").strip()
+
+            # Basic validation
+            errors = []
+            if not username:
+                errors.append("Username is required")
+            if not email:
+                errors.append("Email is required")
+            if not password:
+                errors.append("Password is required")
+            if password != confirm_password:
+                errors.append("Passwords do not match")
+
+            if errors:
+                return self.render("register", errors=errors)
+
+            try:
+                # Create new user
+                user = self.user_service.create_user(
+                    username=username, email=email, password=password
+                )
+
+                # Auto-login after registration
+                response.set_cookie(
+                    "user_id", str(user.id), path="/", secret=SECRET_KEY
+                )
+                return redirect("/dashboard")
+            except DuplicateUser as e:
+                error = str(e)
+            except Exception as e:
+                error = f"Error creating account: {str(e)}"
+
+        return self.render("register", error=error)
 
 
 user_controller = UserController(user_routes)

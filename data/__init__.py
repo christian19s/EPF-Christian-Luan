@@ -5,7 +5,7 @@ from pathlib import Path
 
 # Get absolute path to data directory
 BASE_DIR = Path(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = BASE_DIR / "data"
+DATA_DIR = BASE_DIR / "db"
 DB_PATH = DATA_DIR / "wiki.db"
 SCHEMA_PATH = DATA_DIR / "schema.sql"
 

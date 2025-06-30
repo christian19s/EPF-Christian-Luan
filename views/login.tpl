@@ -3,20 +3,21 @@
     /* Login Page Styles */
 
      body {
-       background-color: #11111b;
+
+      background-image: url("https://i.gifer.com/origin/ba/ba105810faa1e0227a5a8877f7cb68ea_w200.gif"); 
      }
     .login-container {
         max-width: 400px;
         margin: 50px auto;
         padding: 30px;
         background: #fff;
-        border-radius: 8px;
+        border-radius: 0px;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     }
 
     .login-container h2 {
         text-align: center;
-        margin-bottom: 25px;
+        margin-bottom: 20px;
         color: #333;
     }
 
@@ -31,7 +32,7 @@
     }
 
     .form-control {
-        width: 100%;
+        width: 90%;
         padding: 10px 15px;
         border: 1px solid #ddd;
         border-radius: 4px;
