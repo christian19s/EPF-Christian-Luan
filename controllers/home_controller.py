@@ -10,13 +10,13 @@ class HomeController(BaseController):
     
     def setup_routes(self):
         self.app.route("/home", method="GET", callback=self.home)
-        self.app.route("/home/add", method=["GET","POST"], callback=self.add_wiki)
+        self.app.route("/home/create", method=["GET","POST"], callback=self.create_wiki)
 
     def home(self):
         return self.render("home")
 
-    def add_wiki(self):
-        return self.render("home_add", action="/home/add")
+    def create_wiki(self):
+        return self.render("home_form", action="/home/create")
 
 
 home_controller = HomeController(home_routes)
