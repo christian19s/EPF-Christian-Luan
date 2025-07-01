@@ -11,7 +11,6 @@ class BaseController:
         self.app.route("/", method="GET", callback=self.home_redirect)
         self.app.route("/helper", method=["GET"], callback=self.helper)
         self.app.route("/testing", method=["GET"], callback=self.test)
-        self.app.route("/home", methos=["GET"], callback=self.home)
         # Rota para arquivos estáticos (CSS, JS, imagens)
         self.app.route("/static/<filename:path>", callback=self.serve_static)
         
@@ -28,6 +27,7 @@ class BaseController:
 
     def test(self):
         return self.render("testing")
+
 
     def serve_static(self, filename):
         """Serve arquivos estáticos da pasta static/"""

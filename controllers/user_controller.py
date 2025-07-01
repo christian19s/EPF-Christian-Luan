@@ -1,11 +1,8 @@
 import os
 import secrets
-from contextlib import closing
 
 from bottle import Bottle, redirect, request, response, template
 from config import SECRET_KEY, UPLOAD_DIR
-from data import get_db_connection
-from models.user import AuthUser
 from services.exceptions import AuthenticationFailed, DuplicateUser, UserNotFound
 from services.user_service import UserService
 
