@@ -12,13 +12,13 @@
         padding: 30px;
         background: #fff;
         border-radius: 0px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 10px 10px rgba(0, 0, 0, 0.1);
     }
 
     .login-container h2 {
         text-align: center;
         margin-bottom: 20px;
-        color: #333;
+        color: #181926;
     }
 
     .form-group {

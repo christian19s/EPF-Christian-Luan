@@ -1,4 +1,5 @@
 from bottle import static_file
+from data import USER_UPLOADS
 
 
 class BaseController:
@@ -10,10 +11,11 @@ class BaseController:
         """Configura rotas básicas comuns a todos os controllers"""
         self.app.route("/", method="GET", callback=self.home_redirect)
         self.app.route("/helper", method=["GET"], callback=self.helper)
-        self.app.route("/testing", method=["GET"], callback=self.test)
         # Rota para arquivos estáticos (CSS, JS, imagens)
         self.app.route("/static/<filename:path>", callback=self.serve_static)
-        
+        self.app.route(
+            "/uploads/users/<filename:path>", callback=self.serve_user_uploads
+        )
 
     def home_redirect(self):
         """Redireciona a rota raiz para /home"""
@@ -27,7 +29,6 @@ class BaseController:
 
     def test(self):
         return self.render("testing")
-
 
     def serve_static(self, filename):
         """Serve arquivos estáticos da pasta static/"""
@@ -44,3 +45,6 @@ class BaseController:
         from bottle import redirect as bottle_redirect
 
         return bottle_redirect(path)
+
+    def serve_user_uploads(self, filename):
+        return static_file(filename, root=str(USER_UPLOADS))

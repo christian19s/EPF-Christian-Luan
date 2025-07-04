@@ -1,8 +1,10 @@
 import os
+from pathlib import Path
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-UPLOAD_DIR = os.path.join(BASE_DIR, "uploads", "images")
+
 SECRET_KEY = SECRET_KEY = os.environ.get("SECRET_KEY.txt")
+TEMPLATE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "views")
 
 
 class Config:
@@ -16,5 +18,5 @@ class Config:
     TEMPLATE_PATH = os.path.join(BASE_DIR, "views")
     STATIC_PATH = os.path.join(BASE_DIR, "static")
     DATA_PATH = os.path.join(BASE_DIR, "data")
-    DB_PATH = os.path.join(BASE_DIR, DATA_PATH, "db")
+
     # Outras configurações

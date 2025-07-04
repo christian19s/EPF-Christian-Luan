@@ -1,6 +1,3 @@
-from ast import Constant
-
-
 class PermissionSystem:
     # Perm Const
     VIEW_PAGE = 1
