@@ -1,13 +1,10 @@
 import datetime
-import hashlib
 import json
 import os
 from contextlib import closing
 
-# In models/user.py
 import bcrypt
-from config import BASE_DIR, UPLOAD_DIR
-from data import get_db_connection
+from data import get_db_connection, get_user_upload_path
 
 from .permSystem import PermissionSystem
 
@@ -33,8 +30,6 @@ def verify_password(password, password_hash):
 
 
 class AuthUser:
-    """Base class for all authenticated users"""
-
     def __init__(
         self,
         id,
@@ -96,14 +91,27 @@ class AuthUser:
             conn.commit()
 
     def get_profile_picture_url(self):
-        """Get URL for profile picture with OS-agnostic path handling"""
         if self.profile_picture:
-            return os.path.join(
-                "/", "uploads", "profiles", self.profile_picture
-            ).replace("\\", "/")
-        return os.path.join("/", "static", "images", "default-profile.png").replace(
-            "\\", "/"
-        )
+            print(f" file saved as: /uploads/{self.profile_picture}")
+            return f"/uploads/users/{self.profile_picture}"
+        return "/static/images/default-profile.png"
+
+    def update_profile_picture(self, new_picture_path):
+        if not new_picture_path:
+            return False
+        if self.profile_picture:
+            old_path = os.path.join(get_user_upload_path(), self.profile_picture)
+            if os.path.exists(old_path):
+                os.remove(old_path)
+            with closing(get_db_connection()) as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "UPDATE users SET profile_picture = ? WHERE id = ?",
+                    (new_picture_path, self.id),
+                )
+            conn.commit()
+            self.profile_picture = new_picture_path
+            return True
 
     def update_profile(self, **kwargs):
         allowed_fields = ["username", "email", "birthdate", "profile_picture"]
@@ -121,7 +129,6 @@ class AuthUser:
             cursor.execute(f"UPDATE users SET {set_clause} WHERE id = ?", values)
             conn.commit()
 
-            # Update instance properties
             for field, value in updates.items():
                 setattr(self, field, value)
 
@@ -190,16 +197,3 @@ class AuthUser:
             created_at=created_at,
             wiki_roles={},
         )
-
-
-def update_last_login(self):
-    """Update last login timestamp"""
-    new_last_login = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    with closing(get_db_connection()) as conn:
-        cursor = conn.cursor()
-        cursor.execute(
-            "UPDATE users SET last_login = ? WHERE id = ?",
-            (new_last_login, self.id),
-        )
-        conn.commit()
-    self.last_login = new_last_login

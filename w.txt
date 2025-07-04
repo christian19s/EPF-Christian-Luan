@@ -1,0 +1,23 @@
+.
+├── controllers
+│   └── __pycache__
+├── data
+│   ├── db
+│   ├── __pycache__
+│   └── uploads
+│       ├── users
+│       └── wiki
+├── models
+│   └── __pycache__
+├── __pycache__
+├── services
+│   └── __pycache__
+├── static
+│   ├── css
+│   ├── exceptions
+│   │   └── __pycache__
+│   ├── img
+│   └── js
+└── views
+
+21 directories

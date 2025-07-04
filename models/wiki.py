@@ -4,7 +4,7 @@ from contextlib import closing
 
 from data import get_db_connection
 
-from models import AuthUser
+from models.user import AuthUser
 
 
 class WikiSystem:

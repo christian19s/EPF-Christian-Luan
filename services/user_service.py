@@ -5,7 +5,6 @@ import sqlite3
 from contextlib import closing
 
 from bottle import Bottle
-
 from data import get_db_connection
 from models.user import AuthUser, generate_password_hash, verify_password
 
@@ -90,8 +89,8 @@ class UserService:
         user = UserService.get_user_by_id(user_id)
         if not user:
             raise UserNotFound(f"User ID {user_id} not found")
-
-        user.update_profile(**updates)
+        if updates:
+            user.update_profile(**updates)
         return user
 
     @staticmethod
@@ -109,7 +108,6 @@ class UserService:
 
     @staticmethod
     def _hydrate_user(user_data):
-        """Create AuthUser instance from database row"""
         return AuthUser(
             id=user_data["id"],
             username=user_data["username"],
@@ -124,7 +122,7 @@ class UserService:
         )
 
     @staticmethod
-    def get_all_users():
+    def _get_all_users():
         """Retrieve all users from the database"""
         with closing(get_db_connection()) as conn:
             conn.row_factory = sqlite3.Row
