@@ -46,44 +46,53 @@ p {
 }
 
 .link-table {
-	display: flex;
+	grid-area: link-table;
 	border-style: dotted;
-	width: 30%;
 	max-height: 400px;
 	padding: 20px;
 	overflow: hidden;
 }
 
 .main {
-	display: inline-flex;
+	display: grid;
+	grid-template-areas: 
+		"link-table main-p";
+	grid-template-columns: 30% 70%;
 	margin-top: 60px;
+	gap: 30px;
+}
+
+.main-p {
+	grid-area: main-p;
+}
+
+.form-main {
+	display: grid;
+	grid-template-areas: 
+		"link-table form-description";
+	grid-template-columns: 30% 70%;
+	margin-top: 40px;
 	gap: 40px;
 }
 
-.main p {
-	max-width: 70%;
-}
-
-.form-table {
-	display: grid;
-	padding-top: 30px;
-	grid-template-columns: 300px;
-	grid-template-rows: 50px 50px 50px;
-	grid-template-areas:
-		"form-title"
-		"form-text"
-		"form-button";
-	gap: 10px;
-	justify-content: center;
-}
-
 .form-title {
-	grid-area: form-title;
-	height: 100%;
-	width: 100%;
+	margin-left: 30%;
+	margin-top: 40px;
+	height: 30px;
+	width: 40%;
+	font-size: 25px;
+}
+
+.form-name {
+	height: 50%;
+	width: 50%;
 	font-size: 30px;
 }
 
+.form-description {
+	grid-area: form-description;
+	font-size: 20px;
+}
 
 .form-button {
 	grid-area: form-button;
@@ -92,9 +101,7 @@ p {
 	width: 100%;
 }
 
-.form-text {
-	grid-area: form-text;
-	height: 100%;
-	width: 100%;
-	font-size: 30px;
+.dark-mode {
+    background-color: #121212;
+    color: #ffffff;
 }

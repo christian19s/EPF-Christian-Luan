@@ -7,17 +7,18 @@
 		<script src="home.js"></script>
 	</head>
 	<body>
-		<div class="header">
-			<form action="create/add" method="post">
-				<input type="text" name="titulo" placeholder="Título" class="form-title">
-				<button type="submit">Enviar</button>		
-			</form>
-		</div>
-		<form action="create/add" method="post" class="form-table">
+		<form action="create/add" method="post">
+			<div class="header">
+					<input type="text" name="nome" placeholder="Nome da Wiki" class="form-name">
+			</div>
 			<input type="text" name="titulo" placeholder="Título" class="form-title">
-			<input type="text" name="texto" placeholder="Descrição" class="form-text">
-			
-			<button type="submit" class="form-button">Enviar</button>		
+			<div class="form-main">
+				<div class="link-table">
+					<!-- inserir função para coletar os primeiros 10 links da database aqui -->
+					<p> Suas páginas virão aqui. </p>
+				</div>
+				<textarea name="texto" placeholder="Descrição" class="form-description"></textarea>
+			</div>
 		</form>
 		<footer>
 		<p> 2025, WikiTree. Todos os direitos reservados.</p>

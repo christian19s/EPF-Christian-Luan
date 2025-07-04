@@ -5,6 +5,7 @@
 		<title>WikiTree - Home</title>
 		<link rel="stylesheet" href="/static/css/home.css"/>
 		<script src="../static/js/home.js"></script>
+		<script src="../static/js/dark-mode.js"></script>
 	</head>
 	<body>
 		<div class="header">
@@ -17,9 +18,10 @@
 				<!-- inserir função para coletar os primeiros 10 links da database aqui -->
 				<p> inserir os links aqui </p>
 			</div>
-			<p> Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+			<p class="main-p"> Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
 		</div>
 		<button id="btnCreate" class="create-button">Criar Wiki</button>
+		<button id="darkmode"> darkmode </button>
 		<footer>
 		<p> 2025, WikiTree. Todos os direitos reservados.</p>
 		</footer>

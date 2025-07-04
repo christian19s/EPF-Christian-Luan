@@ -15,9 +15,9 @@ class WikiSystem:
             []
         )  # composicao, o sistema wiki e dono de TODAS as instancias
 
-    def create_wiki_instance(self, name, slug, owner):
+    def create_wiki_instance(self, name, slug, description, owner):
         """Create a new wiki instance (composition)"""
-        instance = WikiInstance.create(name, slug, owner)
+        instance = WikiInstance.create(name, slug, description, owner)
         self._wiki_instances.append(instance)
         return instance
 
@@ -52,6 +52,7 @@ class WikiSystem:
                     id=row["id"],
                     name=row["name"],
                     slug=row["slug"],
+                    description=row["description"],
                     owner_id=row["owner_id"],
                     created_at=row["created_at"],
                 )
@@ -62,10 +63,11 @@ class WikiSystem:
 class WikiInstance:
     """instancia de uma wiki n osistema"""
 
-    def __init__(self, id, name, slug, owner_id, created_at):
+    def __init__(self, id, name, slug, description, owner_id, created_at):
         self.id = id
         self.name = name
         self.slug = slug
+        self.description = description
         self.owner_id = owner_id
         self.created_at = created_at
         self._pages = []  # composicao, instancia de wiki tem paginas
@@ -157,19 +159,19 @@ class WikiInstance:
 
     # Db Ops
     @classmethod
-    def create(cls, name, slug, owner):
+    def create(cls, name, slug, description, owner):
         """Cria uma instancia wiki"""
         created_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         with closing(get_db_connection()) as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "INSERT INTO wikis (name, slug, owner_id, created_at) VALUES (?, ?, ?, ?)",
-                (name, slug, owner.id, created_at),
+                "INSERT INTO wikis (name, slug, description, owner_id, created_at) VALUES (?, ?, ?, ?)",
+                (name, slug, description, owner.id, created_at),
             )
             wiki_id = cursor.lastrowid
             conn.commit()
 
-        new_instance = cls(wiki_id, name, slug, owner.id, created_at)
+        new_instance = cls(wiki_id, name, slug, description, owner.id, created_at)
         new_instance.add_moderator(owner)  # criador da wiki eh o moderador
         return new_instance
 
