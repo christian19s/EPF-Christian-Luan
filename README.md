@@ -123,6 +123,7 @@ Para adicionar novos modelos (ex: Atividades):
 - Diagrama
 - Estilização de CSS
 - JS e HTML da wiki
+- remover tudo relacionado ao exemplo activity
 
 
 ## 🧠 Autor e Licença

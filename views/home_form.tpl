@@ -8,12 +8,15 @@
 	</head>
 	<body>
 		<div class="header">
-			<p class="title"> WikiTree </p>
-			<img src="/static/img/placeholder.jpg" alt="WikiTree logo" title="WikiTree logo" style="height: 100px">
+			<form action="create/add" method="post">
+				<input type="text" name="titulo" placeholder="Título" class="form-title">
+				<button type="submit">Enviar</button>		
+			</form>
 		</div>
 		<form action="create/add" method="post" class="form-table">
 			<input type="text" name="titulo" placeholder="Título" class="form-title">
-			<input type="text" name="titulo" placeholder="Background" class="form-background">
+			<input type="text" name="texto" placeholder="Descrição" class="form-text">
+			
 			<button type="submit" class="form-button">Enviar</button>		
 		</form>
 		<footer>

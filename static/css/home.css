@@ -20,7 +20,7 @@ body {
 	color: white;
 }
 
-.header button {
+.header .login-button {
 	background-color: #7f849c;
 	position: absolute;
 	top: 16px;
@@ -68,12 +68,12 @@ p {
 	display: grid;
 	padding-top: 30px;
 	grid-template-columns: 300px;
-	grid-template-rows: 100px 100px 100px;
+	grid-template-rows: 50px 50px 50px;
 	grid-template-areas:
 		"form-title"
-		"form-background"
+		"form-text"
 		"form-button";
-	gap: 30px;
+	gap: 10px;
 	justify-content: center;
 }
 
@@ -81,7 +81,7 @@ p {
 	grid-area: form-title;
 	height: 100%;
 	width: 100%;
-	font-size: 50px;
+	font-size: 30px;
 }
 
 
@@ -92,9 +92,9 @@ p {
 	width: 100%;
 }
 
-.form-background {
-	grid-area: form-background;
+.form-text {
+	grid-area: form-text;
 	height: 100%;
 	width: 100%;
-	font-size: 50px;
+	font-size: 30px;
 }

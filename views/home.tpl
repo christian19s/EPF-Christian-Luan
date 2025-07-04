@@ -10,7 +10,7 @@
 		<div class="header">
 			<p class="title"> WikiTree </p>
 			<img src="/static/img/placeholder.jpg" alt="WikiTree logo" title="WikiTree logo" style="height: 100px">
-			<button id="btnLogin">Login</button>
+			<button id="btnLogin" class="login-button">Login</button>
 		</div>
 		<div class="main">
 			<div class="link-table">
