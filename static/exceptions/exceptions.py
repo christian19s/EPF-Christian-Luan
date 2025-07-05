@@ -25,6 +25,10 @@ class UserNotFound(Exception):
         return self.message
 
 
+class UnauthorizedAccess(Exception):
+    pass
+
+
 class DuplicateUser(Exception):
     """Erro a ser levantado se o usuario ja ta cadastrado"""
 
