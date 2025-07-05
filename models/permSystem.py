@@ -43,7 +43,8 @@ class PermissionSystem:
     MANAGE_WIKI = 16
     MANAGE_USERS = 32
     ADMINISTER = 64
-
+    CREATE_WIKI = 128
+    DELETE_WIKI = 256
     ROLES = {
         "viewer": VIEW_PAGE,
         "editor": VIEW_PAGE | EDIT_PAGE | CREATE_PAGE,
@@ -55,6 +56,7 @@ class PermissionSystem:
             | DELETE_PAGE
             | MANAGE_WIKI
             | MANAGE_USERS
+            | CREATE_WIKI
         ),
         "superadmin": (
             VIEW_PAGE
@@ -64,6 +66,8 @@ class PermissionSystem:
             | MANAGE_WIKI
             | MANAGE_USERS
             | ADMINISTER
+            | CREATE_WIKI
+            | DELETE_WIKI
         ),
     }
 
@@ -80,6 +84,7 @@ class PermissionSystem:
         MANAGE_WIKI: "Manage Wiki Settings",
         MANAGE_USERS: "Manage Users",
         ADMINISTER: "System Administration",
+        CREATE_WIKI: "Create new wikis",
     }
 
     @staticmethod

@@ -41,8 +41,6 @@ def init_db():
         print(f"Directory exists: {WIKI_UPLOADS.exists()}")
         print(f"Directory writable {USER_UPLOADS}: {os.access(USER_UPLOADS, os.W_OK)}")
         print(f"Directory writable {WIKI_UPLOADS}: {os.access(USER_UPLOADS, os.W_OK)}")
-    except Exception as e:
-        print(f"Directory creation error: {str(e)}")
         with closing(get_db_connection()) as conn:
             if SCHEMA_PATH.exists():
                 with open(SCHEMA_PATH, "r") as f:
@@ -51,5 +49,7 @@ def init_db():
                 print(f" Database initialized at: {DB_PATH}")
             else:
                 print(f"Schema file not found at {SCHEMA_PATH}")
+    except Exception as e:
+        print(f"Directory creation error: {str(e)}")
         if __name__ == "__main__":
             init_db()

@@ -38,24 +38,33 @@ class WikiSystem:
             self._load_wiki_instances()
         return next((wi for wi in self._wiki_instances if wi.id == wiki_id), None)
 
+    def get_all_wiki_instances(self):
+        if not self._wiki_instances:
+            self._load_wiki_instances()
+        return self._wiki_instances
+
+    
     def _load_wiki_instances(self):
-        """carrega todas as instancias (privado)"""
+        """Load all wiki instances from database"""
         with closing(get_db_connection()) as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM wikis")
+            cursor.execute("""
+                SELECT w.id, w.name, w.slug, w.owner_id, w.created_at, u.username
+                FROM wikis w
+                JOIN users u ON w.owner_id = u.id
+            """)
             self._wiki_instances = [
                 WikiInstance(
-                    id=row["id"],
-                    name=row["name"],
-                    slug=row["slug"],
-                    description=row["description"],
-                    owner_id=row["owner_id"],
-                    owner_username=["owner_username"],
-                    created_at=row["created_at"],
-
+                    id=row[0],
+                    name=row[1],
+                    slug=row[2],
+                    owner_id=row[3],
+                    created_at=row[4],
+                    owner_username=row[5]
                 )
                 for row in cursor.fetchall()
             ]
+
 
 
 class WikiInstance:

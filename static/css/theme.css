@@ -1,0 +1,96 @@
+:root {
+    /* Catppuccin Mocha color palette */
+    --rosewater: #f5e0dc;
+    --flamingo: #f2cdcd;
+    --pink: #f5c2e7;
+    --mauve: #cba6f7;
+    --red: #f38ba8;
+    --maroon: #eba0ac;
+    --peach: #fab387;
+    --yellow: #f9e2af;
+    --green: #a6e3a1;
+    --teal: #94e2d5;
+    --sky: #89dceb;
+    --sapphire: #74c7ec;
+    --blue: #89b4fa;
+    --lavender: #b4befe;
+    --text: #cdd6f4;
+    --subtext1: #bac2de;
+    --subtext0: #a6adc8;
+    --overlay2: #9399b2;
+    --overlay1: #7f849c;
+    --overlay0: #6c7086;
+    --surface2: #585b70;
+    --surface1: #45475a;
+    --surface0: #313244;
+    --base: #1e1e2e;
+    --mantle: #181825;
+    --crust: #11111b;
+}
+
+/* Apply theme to all pages */
+body {
+    background-color: var(--base);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* Buttons */
+.btn {
+    background-color: var(--blue);
+    color: var(--crust);
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn:hover {
+    background-color: var(--sapphire);
+}
+
+.btn-danger {
+    background-color: var(--red);
+}
+
+.btn-danger:hover {
+    background-color: var(--maroon);
+}
+
+/* Cards */
+.wiki-card, .card {
+    background-color: var(--surface0);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Forms */
+.form-control {
+    background-color: var(--surface0);
+    color: var(--text);
+    border: 1px solid var(--surface1);
+    padding: 0.5rem;
+    border-radius: 4px;
+    width: 100%;
+}
+
+/* Links */
+a {
+    color: var(--lavender);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--mauve);
+    text-decoration: underline;
+}

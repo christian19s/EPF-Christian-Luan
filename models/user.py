@@ -17,13 +17,10 @@ def generate_password_hash(password):
 
 
 def verify_password(password, password_hash):
-    print(f"Verifying password against hash: {password_hash}")
     try:
         password_bytes = password.encode("utf-8")
         password_hash_bytes = password_hash.encode("utf-8")
-        result = bcrypt.checkpw(password_bytes, password_hash_bytes)
-        print(f"Password match: {result}")
-        return result
+        return bcrypt.checkpw(password_bytes, password_hash_bytes)
     except Exception as e:
         print(f"Password verification error: {str(e)}")
         return False
@@ -38,11 +35,11 @@ class AuthUser:
         password_hash,
         birthdate=None,
         profile_picture=None,
-        role=None,
-        permissions=0,
+        global_role="viewer",  # Changed from permissions/role
         created_at=None,
         last_login=None,
         wiki_roles=None,
+        owned_wikis=None,
     ):
         self.id = id
         self.username = username
@@ -50,35 +47,34 @@ class AuthUser:
         self.password_hash = password_hash
         self.birthdate = birthdate
         self.profile_picture = profile_picture
-        if isinstance(permissions, str):
-            try:
-                self.permissions = int(permissions)
-            except ValueError:
-                self.permissions = 0
-        else:
-            self.permissions = permissions or 0
+        self.global_role = global_role  # Now stores role name
         self.created_at = created_at
         self.last_login = last_login
         self.wiki_roles = wiki_roles or {}
-        self.owned_wikis = []
+        self.owned_wikis = owned_wikis or []
         self.edited_pages = []
 
     def is_authenticated(self):
         return True
 
-    def is_admin(self):
-        return False
-
-    def get_permissions(self, wiki_id=None):
-        return PermissionSystem.get_role_permissions(
-            PermissionSystem.get_role_for_context(self, wiki_id)
-        )
-
     def can(self, permission, wiki_id=None):
         return PermissionSystem.can(self, permission, wiki_id)
 
+    @classmethod
+    def load_owned_wikis(cls, user):
+        """Load wikis owned by this user"""
+        with closing(get_db_connection()) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM wikis WHERE owner_id = ?", (user.id,))
+            user.owned_wikis = [row[0] for row in cursor.fetchall()]
+        return user
+
     def get_permission_labels(self, wiki_id=None):
-        return PermissionSystem.get_permission_labels(self.get_permissions(wiki_id))
+        return PermissionSystem.get_permission_labels(
+            PermissionSystem.get_role_permissions(
+                PermissionSystem.get_role_for_context(self, wiki_id)
+            )
+        )
 
     def get_wiki_role(self, wiki_id):
         return PermissionSystem.get_role_for_context(self, wiki_id)
@@ -86,6 +82,7 @@ class AuthUser:
     def set_wiki_role(self, wiki_id, role_name):
         if role_name not in PermissionSystem.ROLES:
             raise ValueError(f"Invalid role: {role_name}")
+        wiki_id = str(wiki_id)
         self.wiki_roles[wiki_id] = role_name
 
         with closing(get_db_connection()) as conn:
@@ -98,26 +95,27 @@ class AuthUser:
 
     def get_profile_picture_url(self):
         if self.profile_picture:
-            print(f" file saved as: /uploads/{self.profile_picture}")
             return f"/uploads/users/{self.profile_picture}"
         return "/static/images/default-profile.png"
 
     def update_profile_picture(self, new_picture_path):
         if not new_picture_path:
             return False
-        if self.profile_picture:
-            old_path = os.path.join(get_user_upload_path(), self.profile_picture)
-            if os.path.exists(old_path):
-                os.remove(old_path)
-            with closing(get_db_connection()) as conn:
-                cursor = conn.cursor()
-                cursor.execute(
-                    "UPDATE users SET profile_picture = ? WHERE id = ?",
-                    (new_picture_path, self.id),
-                )
+
+        old_path = os.path.join(get_user_upload_path(), self.profile_picture)
+        if self.profile_picture and os.path.exists(old_path):
+            os.remove(old_path)
+
+        with closing(get_db_connection()) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE users SET profile_picture = ? WHERE id = ?",
+                (new_picture_path, self.id),
+            )
             conn.commit()
-            self.profile_picture = new_picture_path
-            return True
+
+        self.profile_picture = new_picture_path
+        return True
 
     def update_profile(self, **kwargs):
         allowed_fields = ["username", "email", "birthdate", "profile_picture"]
@@ -138,7 +136,7 @@ class AuthUser:
             for field, value in updates.items():
                 setattr(self, field, value)
 
-            return True
+        return True
 
     def change_password(self, new_password):
         """Securely change password using bcrypt"""
@@ -150,19 +148,21 @@ class AuthUser:
                 (password_hash, self.id),
             )
             conn.commit()
-            self.password_hash = password_hash
-            return True
+        self.password_hash = password_hash
+        return True
 
     def verify_password(self, password):
         """Verify provided password against stored hash using bcrypt"""
         return verify_password(password, self.password_hash)
 
+    @staticmethod
     def create_user(username, email, password, birthdate=None, profile_picture=None):
         """Create and save a new user to the database"""
         password_hash = generate_password_hash(password)
         created_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        wiki_roles_json = json.dumps({})  # roles são inicializadas vazias
-        role = PermissionSystem.DEFAULT_ROLES["global"]  # permisssa default
+        wiki_roles_json = json.dumps({})
+        global_role = "viewer"  # Default role
+
         with closing(get_db_connection()) as conn:
             cursor = conn.cursor()
             cursor.execute(
@@ -170,7 +170,7 @@ class AuthUser:
                 INSERT INTO users (
                     username, 
                     email, 
-                    permissions,
+                    global_role, 
                     password_hash, 
                     birthdate, 
                     profile_picture,  
@@ -181,7 +181,7 @@ class AuthUser:
                 (
                     username,
                     email,
-                    role,  # role = permission nesse caso.
+                    global_role,
                     password_hash,
                     birthdate,
                     profile_picture,
@@ -199,7 +199,7 @@ class AuthUser:
             password_hash=password_hash,
             birthdate=birthdate,
             profile_picture=profile_picture,
-            role=role,
+            global_role=global_role,
             created_at=created_at,
             wiki_roles={},
         )

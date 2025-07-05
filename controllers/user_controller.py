@@ -4,7 +4,7 @@ import sqlite3
 import traceback
 from contextlib import closing
 
-from bottle import Bottle, HTTPError, redirect, request, response
+from bottle import Bottle, HTTPError, HTTPResponse, redirect, request, response
 from config import SECRET_KEY
 from data import BASE_DIR, get_db_connection
 from models.user import AuthUser
@@ -32,13 +32,11 @@ class UserController(BaseController):
         self.app.route("/login", method=["GET", "POST"], callback=self.login)
         self.app.route("/register", method=["GET", "POST"], callback=self.register)
         self.app.route("/dashboard", method="GET", callback=self.dashboard)
-        self.app.route("/dashboard/update_profile_picture",method="POST",
+        self.app.route(
+            "/dashboard/update_profile_picture",
+            method="POST",
             callback=self.update_profile_picture,
         )
- 
-
-
-
 
     def list_users(self):
         try:
@@ -202,12 +200,15 @@ class UserController(BaseController):
     def register(self):
         """Handle user registration"""
         error = None
+        print("attempting to create user")
+
         if request.method == "POST":
             username = request.forms.get("username", "").strip()
             email = request.forms.get("email", "").strip()
             password = request.forms.get("password", "").strip()
             confirm_password = request.forms.get("confirm_password", "").strip()
-            # validando input
+
+            # Validation
             errors = []
             if not username:
                 errors.append("Username is required")
@@ -222,18 +223,27 @@ class UserController(BaseController):
                 return self.render("register", errors=errors)
 
             try:
-                # Cria novo usuario, outros atributos são tratados em dashboard:
+                print(f"attempting to create user {username}")
                 user = self.user_service.create_user(
                     username=username, email=email, password=password
                 )
+
+                # Set cookie
                 response.set_cookie(
                     "user_id", str(user.id), path="/", secret=SECRET_KEY
                 )
-                return redirect("/dashboard")
+                print(f"Cookie set for user: {user.id}")
+
+                response.status = 303
+                response.headers["Location"] = "/dashboard"
+                return response
+
             except DuplicateUser as e:
                 error = str(e)
             except Exception as e:
                 error = f"Error creating account: {str(e)}"
+                print(f"Registration error: {traceback.format_exc()}")
+
         return self.render("register", error=error)
 
     def update_profile_picture(self):
@@ -256,7 +266,7 @@ class UserController(BaseController):
                 print(f"error: {e}")
             else:
                 print("this was caught here")
-    
+
         return redirect(redirect_url)
 
     def get_edited_pages(self, user_id):
@@ -317,7 +327,7 @@ class UserController(BaseController):
         if ext not in (".jpg", ".jpeg", ".png", ".gif"):
             print("invalid format detected")
             return old_filename
-        absolute_path = UPLOAD_DIR/ filename
+        absolute_path = UPLOAD_DIR / filename
         try:
 
             os.makedirs(os.path.dirname(absolute_path), exist_ok=True)
@@ -333,10 +343,9 @@ class UserController(BaseController):
 
             print(f"Successfully saved to {absolute_path}")
 
-
             # Delete old file if it exists
             if old_filename:
-                old_abs_path = UPLOAD_DIR/ "uploads" / old_filename
+                old_abs_path = UPLOAD_DIR / "uploads" / old_filename
                 print(f"olf file found at: {old_abs_path}")
                 if os.path.exists(old_abs_path):
                     try:

@@ -1,12 +1,16 @@
 import datetime
 import json
-import os
 import sqlite3
 from contextlib import closing
 
 from bottle import Bottle
 from data import get_db_connection
-from models.user import AuthUser, generate_password_hash, verify_password
+from models.user import (
+    AuthUser,
+    PermissionSystem,
+    generate_password_hash,
+    verify_password,
+)
 
 from .exceptions import AuthenticationFailed, DuplicateUser, UserNotFound
 
@@ -35,16 +39,12 @@ class UserService:
     @staticmethod
     def authenticate_user(username, password):
         """Authenticate user credentials"""
-
-        print(f"Authenticating user: {username}")
-
         user = UserService.get_user_by_username(username)
         if not user:
-            raise UserNotFound(f"Nenhum usuario com o nome {username}")
+            raise UserNotFound(f"No user with username {username}")
 
         if not user.verify_password(password):
             raise AuthenticationFailed("Invalid password")
-        print(f"Stored hash: {user.password_hash if user else 'No user found'}")
         return user
 
     @staticmethod
@@ -73,6 +73,12 @@ class UserService:
 
         return UserService._hydrate_user(user_data)
 
+    def user_can_create_wiki(self, user):
+        """Check if user has permission to create wikis"""
+        if not user:
+            return False
+        return PermissionSystem.can(user, PermissionSystem.CREATE_WIKI)
+
     @staticmethod
     def get_user_by_username(username):
         """Retrieve user by username"""
@@ -81,6 +87,10 @@ class UserService:
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
             user_data = cursor.fetchone()
+
+        if not user_data:
+            return None
+
         return UserService._hydrate_user(user_data)
 
     @staticmethod
@@ -108,6 +118,7 @@ class UserService:
 
     @staticmethod
     def _hydrate_user(user_data):
+        """Create AuthUser instance from database row"""
         return AuthUser(
             id=user_data["id"],
             username=user_data["username"],
@@ -115,7 +126,7 @@ class UserService:
             password_hash=user_data["password_hash"],
             birthdate=user_data["birthdate"],
             profile_picture=user_data["profile_picture"],
-            role=user_data["permissions"],
+            global_role=user_data["global_role"],
             created_at=user_data["created_at"],
             last_login=user_data["last_login"],
             wiki_roles=json.loads(user_data["wiki_roles"] or "{}"),
@@ -132,20 +143,6 @@ class UserService:
 
         users = []
         for user_data in users_data:
-            # Parse JSON fields and convert to Python objects
-            try:
-                wiki_roles = (
-                    json.loads(user_data["wiki_roles"])
-                    if user_data["wiki_roles"]
-                    else {}
-                )
-            except json.JSONDecodeError:
-                wiki_roles = {}
-
-            # Convert timestamp strings to datetime objects
-            created_at = 0
-            last_login = 0
-
             users.append(
                 AuthUser(
                     id=user_data["id"],
@@ -154,13 +151,12 @@ class UserService:
                     password_hash=user_data["password_hash"],
                     birthdate=user_data["birthdate"],
                     profile_picture=user_data["profile_picture"],
-                    role=user_data["permissions"],
-                    created_at=created_at,
-                    last_login=last_login,
-                    wiki_roles=wiki_roles,
+                    global_role=user_data["global_role"],  # Changed from permissions
+                    created_at=user_data["created_at"],
+                    last_login=user_data["last_login"],
+                    wiki_roles=json.loads(user_data["wiki_roles"] or "{}"),
                 )
             )
-
         return users
 
     @staticmethod
@@ -170,3 +166,8 @@ class UserService:
             cursor = conn.cursor()
             cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
             conn.commit()
+
+    @staticmethod
+    def get_all_users():
+        """Public method to get all users"""
+        return UserService._get_all_users()

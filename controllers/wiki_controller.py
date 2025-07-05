@@ -5,17 +5,17 @@ from contextlib import closing
 
 from bottle import (TEMPLATE_PATH, Bottle, HTTPResponse, SimpleTemplate,
                     redirect, request, response, static_file, template)
-
 from config import SECRET_KEY, TEMPLATE_DIR
 from data import get_db_connection, get_wiki_upload_path
 from models.permSystem import PermissionSystem
 from models.user import AuthUser
 from models.wiki import MediaItem, WikiInstance, WikiPage, WikiSystem
+from services import user_service
 from services.user_service import UserService
 from services.wiki_service import WikiService
 
 
-# Define custom exceptions
+#tratamento de erro, ainda nao implementado, talvez n de tempo
 class WikiNotFound(Exception): pass
 class PageNotFound(Exception): pass
 class UnauthorizedAccess(Exception): pass
@@ -26,8 +26,8 @@ TEMPLATE_PATH.insert(0,TEMPLATE_DIR)
 class WikiController:
     def __init__(self, app):
         self.app = app
-        self.user_service = UserService()
-        self.wiki_service = WikiService()
+        self.user_service = UserService
+        self.wiki_service = WikiService(self.user_service)
         self.setup_routes()
     
     def setup_routes(self):
@@ -43,6 +43,7 @@ class WikiController:
         self.app.route("/wikis/<wiki_slug>/<page_slug>/edit", method=["GET", "POST"], callback=self.edit_page)
         self.app.route("/wikis/<wiki_slug>/<page_slug>/delete", method="POST", callback=self.delete_page)
         self.app.route("/wikis/<wiki_slug>/<page_slug>/history", method="GET", callback=self.page_history)
+        self.app.route("/wikis/create/form", method="GET", callback=self.get_create_wiki_form)
         
         # Media routes
         self.app.route("/wikis/<wiki_slug>/upload-media", method="POST", callback=self.upload_media)
@@ -88,9 +89,9 @@ class WikiController:
     def list_wikis(self):
         try:
             print("searching wiki!!!")
-            wikis = self.wiki_service.wiki_system.get_all_wiki_instances()
+            wikis = self.wiki_service.get_all_wiki_instances()
             return self.render_template(
-                "wiki_list.tpl",
+                "wiki_view.tpl",
                 wikis=wikis
             )
         except Exception as e:
@@ -101,62 +102,108 @@ class WikiController:
 
 
     def create_wiki(self):
+     user = self.get_current_user()
+     if not user:
+         return redirect("/login")
+    
+    # Determine if this is an HTMX request
+     if not PermissionSystem.can(user, PermissionSystem.CREATE_WIKI):
+        return self.render_error("you dont have permission to create a wiki!")
+     hx_mode = request.headers.get('HX-Request') == 'true'
+
+    
+     if request.method == "GET":
+         return self.render_template(
+            "wiki_form.tpl", 
+            wiki=None,
+            action_url="/wikis/create", 
+            cancel_url="/wikis",
+            hx_mode=hx_mode
+        ) # contexto hx e importante
+    
+    # Process form data
+     name = request.forms.get("name", "").strip()
+     slug = request.forms.get("slug", "").strip()
+     description = request.forms.get("description", "").strip()
+    
+     errors = []
+     if not name:
+         errors.append("Wiki name is required")
+     if not slug:
+        errors.append("URL slug is required")
+     if not re.match(r'^[a-z0-9\-]+$', slug):
+         errors.append("Slug can only contain lowercase letters, numbers, and hyphens")
+    
+     if errors:
+         return self.render_template(
+            "wiki_form.tpl",
+            wiki=None,
+            errors=errors,
+            action_url="/wikis/create",
+            cancel_url="/wikis",
+            hx_mode=hx_mode  # passa o modo para o tpl
+        )
+    
+     try:
+         wiki = self.wiki_service.create_wiki(name, slug, user)
+         # add descricao pra wiki
+         with closing(get_db_connection()) as conn:
+             cursor = conn.cursor()
+             cursor.execute(
+                 "UPDATE wikis SET description = ? WHERE id = ?",
+                 (description, wiki.id)
+             )
+             conn.commit()
+        
+        
+         if hx_mode:
+             response.headers['HX-Trigger'] = 'newWikiCreated'
+             return '''
+            <div class="text-center p-4">
+                <i class="fas fa-check-circle text-green-500 text-4xl mb-3"></i>
+                <h3 class="text-xl font-bold mb-2">Wiki Created!</h3>
+                <p>Your wiki has been created successfully.</p>
+                <div class="mt-4">
+                    <a href="/wikis/{}" class="btn btn-primary mr-2">
+                        View Wiki
+                    </a>
+                    <button class="btn" 
+                        _="on click remove .show from #create-wiki-modal then wait 200ms then set #create-wiki-modal's innerHTML to ''">
+                        Close
+                    </button>
+                </div>
+            </div>
+            '''.format(slug)
+        
+         return redirect(f"/wikis/{slug}")
+     except Exception as e:
+         errors = [f"Error creating wiki: {str(e)}"]
+         return self.render_template(
+            "wiki_form.tpl",
+            wiki=None,
+            errors=errors,
+            action_url="/wikis/create", 
+            cancel_url="/wikis",
+            hx_mode=hx_mode  
+        )     
+
+
+
+    def get_create_wiki_form(self):
+        """Return just the form for creating a wiki (for HTMX)"""
         user = self.get_current_user()
         if not user:
-            return redirect("/login")
-            
-        if request.method == "GET":
-            return self.render_template(
-                "wiki_form.tpl", 
-                wiki=None,
-                action_url="/wikis/create", 
-                cancel_url="/wikis"
-            )
-        
-        # Processa data dos forms
-        name = request.forms.get("name", "").strip()
-        slug = request.forms.get("slug", "").strip()
-        description = request.forms.get("description", "").strip()
-        
-        errors = []
-        if not name:
-            errors.append("Wiki name is required")
-        if not slug:
-            errors.append("URL slug is required")
-        if not re.match(r'^[a-z0-9\-]+$', slug):
-            errors.append("Slug can only contain lowercase letters, numbers, and hyphens")
-        
-        if errors:
-            return self.render_template(
-                "wiki_form.tpl",
-                wiki=None,
-                errors=errors,
-                action_url="/wikis/create",  # Changed to action_url
-                cancel_url="/wikis"
-            )
-        
-        try:
-            wiki = self.wiki_service.create_wiki(name, slug, user)
-            
-            # Adiciona descr pra wiki
-            with closing(get_db_connection()) as conn:
-                cursor = conn.cursor()
-                cursor.execute(
-                    "UPDATE wikis SET description = ? WHERE id = ?",
-                    (description, wiki.id)
-                )
-                conn.commit()
-                
-            return redirect(f"/wikis/{slug}")
-        except Exception as e:
-            errors = [f"Error creating wiki: {str(e)}"]
-            return self.render_template(
-                "wiki_form.tpl",
-                wiki=None,
-                errors=errors,
-                action_url="/wikis/create", 
-                cancel_url="/wikis"
-            )
+            return HTTPResponse(status=401, body="Unauthorized")
+        return self.render_template(
+         "wiki_form.tpl", 
+         wiki=None,
+         action_url="/wikis/create", 
+         cancel_url="#",
+         hx_mode=True
+     )
+
+
+
 
     def view_wiki(self, wiki_slug):
         try:
@@ -191,7 +238,7 @@ class WikiController:
         try:
             wiki = self.wiki_service.get_wiki_by_slug(wiki_slug)
             
-            # checa permissões
+            # checa permissoes
             print("trying to get permission to edit wiki:")
             if not PermissionSystem.can(user, PermissionSystem.MANAGE_WIKI, wiki.id):
                 return self.render_error("You don't have permission to edit this wiki", 403)
@@ -539,7 +586,6 @@ class WikiController:
             if not os.path.exists(file_path):
                 raise MediaNotFound("File not found")
             
-            # Set caching headers (1 year for immutable resources)(nao entendo o proposito idsso)
             response.set_header("Cache-Control", "public, max-age=31536000, immutable")
             
             return static_file(
