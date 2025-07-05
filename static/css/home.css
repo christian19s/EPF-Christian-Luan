@@ -32,9 +32,10 @@ body {
 
 .create-button {
 	background-color: #7f849c;
-	height: 50px;
-	width: 90px;
+	width: 50%;
 	border: color(white);
+	grid-area: "create-button";
+	margin-left: 25%;
 }
 
 footer p {
@@ -99,6 +100,23 @@ p {
 	background-color: #7f849c;
 	height: 100%;
 	width: 100%;
+}
+
+.wiki-buttons {
+	display: grid;
+	grid-template-columns: 50% 50%;
+	grid-template-rows: 60px;
+	grid-template-areas: 
+		"create-button view-button";
+	margin: 30px;
+}
+
+.view-button {
+	grid-area: "view-button";
+	background-color: #7f849c;
+	width: 50%;
+	border: color(white);
+	margin-left: 25%;
 }
 
 .dark-mode {

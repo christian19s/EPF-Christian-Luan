@@ -5,6 +5,9 @@ document.addEventListener('DOMContentLoaded', function () {
 	document.getElementById('btnCreate').addEventListener('click', function () {
 		window.location.href = "/home/create";
 	});
+		document.getElementById('btnView').addEventListener('click', function () {
+		window.location.href = "/wikis";
+	});
 });
 
 

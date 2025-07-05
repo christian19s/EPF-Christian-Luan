@@ -92,7 +92,7 @@ class WikiController:
     def list_wikis(self):
         try:
             print("searching wiki!!!")
-            wikis = self.wiki_service.get_all_wiki_instances()
+            wikis = self.wiki_service.wiki_system.get_all_wiki_instances()
             return self.render_template(
                 "wiki_view.tpl",
                 wikis=wikis
