@@ -19,9 +19,7 @@ class AuthUser:
         self.password_hash = password_hash
         self.birthdate = birthdate
         self.profile_picture = profile_picture
-        self.role = (
-            role or PermissionSystem.DEFAULT_ROLES["global"]
-        )  # Add role attribute
+        self.role = role or PermissionSystem.DEFAULT_ROLES["global"]
         self.permissions = permissions
         self.created_at = created_at
         self.last_login = last_login
@@ -91,7 +89,6 @@ class PermissionSystem:
     @staticmethod
     def has_permission(user_permissions, required_permission):
         """Check if permissions include the required permission"""
-        # Convert to int if needed
         if isinstance(user_permissions, str):
             try:
                 user_permissions = int(user_permissions)
@@ -107,7 +104,6 @@ class PermissionSystem:
     @staticmethod
     def get_permission_labels(permission_mask):
         """Get human-readable permission names from bitmask"""
-        # Convert to int if needed
         if isinstance(permission_mask, str):
             try:
                 permission_mask = int(permission_mask)
@@ -123,48 +119,44 @@ class PermissionSystem:
     @staticmethod
     def get_role_for_context(user, wiki_id=None):
         """Determine user's role in a specific context"""
-        # Superadmin has all permissions everywhere
+        # superadmin tem a admin em todas
         if PermissionSystem.has_permission(
             user.permissions, PermissionSystem.ADMINISTER
         ):
             return "superadmin"
-
-        # Check if user owns the wiki
+        # dono de uma wiki e admin
         if wiki_id and hasattr(user, "owned_wikis"):
             if any(wiki.id == wiki_id for wiki in user.owned_wikis):
                 return "admin"
 
-        # Check wiki-specific role
         if wiki_id and hasattr(user, "wiki_roles"):
             if wiki_id in user.wiki_roles:
                 return user.wiki_roles[wiki_id]
-
-        # Fallback to global role
+        # se usuario
         return getattr(user, "role", "viewer")
 
     @staticmethod
     def can(user, permission, wiki_id=None):
         """Check user permission in the context of a wiki"""
         if user is None:
-            return False  # Get user's role in this context
+            return False
         role = PermissionSystem.get_role_for_context(user, wiki_id)
         print(f"Required permission: {permission}")
         print(f"user has: {user.global_role} as global")
         print(f"user has: {user.wiki_roles}")
 
-        # Get permissions for this role
+        # checa as permissoes para essa role
         role_permissions = PermissionSystem.get_role_permissions(role)
 
-        # Check if permission is included
         return PermissionSystem.has_permission(role_permissions, permission)
 
     @staticmethod
     def get_role_for_context(user, wiki_id=None):
         """Determine user's role in a specific context"""
-        # superard
+        # superadm e super adm em todas as wikis
         if user.global_role == "superadmin":
             return "superadmin"
-
+        # usuario e admin em todas as wikis que ele criou
         if wiki_id and wiki_id in user.owned_wikis:
             return "admin"
 
