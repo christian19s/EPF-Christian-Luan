@@ -3,17 +3,16 @@ CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
     email TEXT UNIQUE NOT NULL,
-    permissions TEXT NOT NULL,
+    global_role TEXT NOT NULL DEFAULT 'viewer',  
     password_hash TEXT NOT NULL,
     birthdate TEXT,
     profile_picture TEXT,
-    is_admin BOOLEAN DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_login TIMESTAMP,
     wiki_roles TEXT NOT NULL DEFAULT '{}' 
 );
 
--- Add description column to wikis table
+
 CREATE TABLE IF NOT EXISTS wikis (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT UNIQUE NOT NULL,
@@ -24,7 +23,6 @@ CREATE TABLE IF NOT EXISTS wikis (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (owner_id) REFERENCES users(id)
 );
-
 
 CREATE TABLE IF NOT EXISTS pages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -80,12 +78,5 @@ CREATE INDEX IF NOT EXISTS idx_media_wiki ON media(wiki_id);
 CREATE INDEX IF NOT EXISTS idx_media_user ON media(uploaded_by);
 CREATE INDEX IF NOT EXISTS idx_page_media ON page_media(media_id);
 
--- Create wiki_permissions table
-CREATE TABLE IF NOT EXISTS wiki_permissions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    wiki_id INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
-    permission_level INTEGER NOT NULL,
-    FOREIGN KEY (wiki_id) REFERENCES wikis(id),
-    FOREIGN KEY (user_id) REFERENCES users(id)
-);
+
+
