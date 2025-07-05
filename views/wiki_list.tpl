@@ -7,7 +7,7 @@
 <div class="container">
     <div class="dashboard-header">
         <h1>All Wikis</h1>
-        % if user and user.can.create_wiki():
+        % if user and user.can(PermissionSystem.CREATE_WIKI):
             <button class="btn btn-primary"
                 hx-get="/wikis/create/form"
                 hx-target="#create-wiki-modal"

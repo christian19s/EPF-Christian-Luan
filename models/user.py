@@ -207,36 +207,7 @@ class AuthUser:
                 last_login=user_data["last_login"],
                 wiki_roles=json.loads(user_data["wiki_roles"] or "{}"),
             )
-        return None
-
-    @staticmethod
-    def hydrate_user(user_data):
-        """Create AuthUser instance from database row"""
-        return AuthUser(
-            id=user_data["id"],
-            username=user_data["username"],
-            email=user_data["email"],
-            password_hash=user_data["password_hash"],
-            birthdate=user_data["birthdate"],
-            profile_picture=user_data["profile_picture"],
-            global_role=user_data["global_role"],
-            created_at=user_data["created_at"],
-            last_login=user_data["last_login"],
-            wiki_roles=json.loads(user_data["wiki_roles"] or "{}"),
-        )
-
-    @staticmethod
-    def get_user_by_id(user_id):
-        """Retrieve user by ID"""
-        with closing(get_db_connection()) as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
-            user_data = cursor.fetchone()
-
-        if not user_data:
-            return None
-
-            return AuthUser.hydrate_user(user_data)
+        return None  
 
     @staticmethod
     def create_user(

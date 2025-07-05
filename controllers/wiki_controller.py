@@ -5,6 +5,7 @@ from contextlib import closing
 
 from bottle import (TEMPLATE_PATH, Bottle, HTTPResponse, SimpleTemplate,
                     redirect, request, response, static_file, template)
+
 from config import SECRET_KEY, TEMPLATE_DIR
 from data import get_db_connection, get_wiki_upload_path
 from models.permSystem import PermissionSystem
@@ -107,11 +108,15 @@ class WikiController:
      user = self.get_current_user()
      if not user:
          return redirect("/login")
-    
-    # Determine if this is an HTMX request
+     
+      # Determine if this is an HTMX request
      if not PermissionSystem.can(user, PermissionSystem.CREATE_WIKI):
         return self.render_error("you dont have permission to create a wiki!")
      hx_mode = request.headers.get('HX-Request') == 'true'
+     print(f"Admin permissions: {user.get_permission_labels}")
+     print(f"CREATE_WIKI permission: {PermissionSystem.CREATE_WIKI}")
+     print(f"Has permission: { PermissionSystem.CREATE_WIKI == PermissionSystem.CREATE_WIKI}")
+
 
     
      if request.method == "GET":

@@ -15,7 +15,7 @@ class admin(UserController):
                 username="admin",
                 email="admin@example.com",
                 password="adminpassword",
-                global_role="admin",
+                global_role="superadmin",
             )
             print("Created admin user !!!!!!")
     except Exception as e:

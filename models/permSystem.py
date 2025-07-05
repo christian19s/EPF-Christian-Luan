@@ -57,6 +57,7 @@ class PermissionSystem:
             | MANAGE_WIKI
             | MANAGE_USERS
             | CREATE_WIKI
+            | ADMINISTER
         ),
         "superadmin": (
             VIEW_PAGE
@@ -144,13 +145,34 @@ class PermissionSystem:
     @staticmethod
     def can(user, permission, wiki_id=None):
         """Check user permission in the context of a wiki"""
-        # Handle unauthenticated users
-        if user is None or not hasattr(user, "permissions"):
-            return False
-
+        if user is None:
+            return False  # Get user's role in this context
         role = PermissionSystem.get_role_for_context(user, wiki_id)
+        print(f"Required permission: {permission}")
+        print(f"user has: {user.global_role} as global")
+        print(f"user has: {user.wiki_roles}")
+
+        # Get permissions for this role
         role_permissions = PermissionSystem.get_role_permissions(role)
+
+        # Check if permission is included
         return PermissionSystem.has_permission(role_permissions, permission)
+
+    @staticmethod
+    def get_role_for_context(user, wiki_id=None):
+        """Determine user's role in a specific context"""
+        # superard
+        if user.global_role == "superadmin":
+            return "superadmin"
+
+        if wiki_id and wiki_id in user.owned_wikis:
+            return "admin"
+
+        if wiki_id and str(wiki_id) in user.wiki_roles:
+            return user.wiki_roles[str(wiki_id)]
+
+        # 4. Fallback to global role
+        return user.global_role
 
     @staticmethod
     def get_all_roles():
