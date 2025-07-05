@@ -26,7 +26,7 @@ class WikiController:
     def __init__(self, app):
         self.app = app
         self.user_service = UserService()
-        self.wiki_service = WikiService(self.user_service)
+        self.wiki_service = WikiService()
         self.setup_routes()
     
     def setup_routes(self):
