@@ -75,6 +75,8 @@ class AuthUser:
                 PermissionSystem.get_role_for_context(self, wiki_id)
             )
         )
+    def role_info(self):
+        return f"Global Role: {self.global_role}, Wiki Roles: {len(self.wiki_roles)} wikis"
 
     def get_wiki_role(self, wiki_id):
         return PermissionSystem.get_role_for_context(self, wiki_id)

@@ -4,7 +4,7 @@
 <div class="container">
     <div class="dashboard-header">
         <h1>All Wikis</h1>
-        % if user and user.can(PermissionSystem.CREATE_PAGE):
+        % if user and user.can(PermissionSystem.CREATE_WIKI):
             <a href="/wikis/create" class="btn btn-primary">
                 <i class="fas fa-plus"></i> Create New Wiki
             </a>

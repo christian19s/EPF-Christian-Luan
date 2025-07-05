@@ -18,7 +18,7 @@ class WikiSystem:
 
     def create_wiki_instance(self, name, slug, owner):
         """Create a new wiki instance (composition)"""
-        instance = WikiInstance.create(name, slug, description, owner)
+        instance = WikiInstance.create(name, slug, "", owner)
         self._wiki_instances.append(instance)
         return instance
 
@@ -83,38 +83,39 @@ class WikiInstance:
         self.description = ""
     
 
-    def get_wiki_by_slug(self, slug):
-        """Retrieve wiki by slug with owner and page information"""
-        with closing(get_db_connection()) as conn:
-            conn.row_factory = sqlite3.Row
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT w.*, u.username as owner_username 
-                FROM wikis w
-                JOIN users u ON w.owner_id = u.id
-                WHERE w.slug = ?
-            """, (slug,))
-            row = cursor.fetchone()
-            if not row:
-                raise WikiNotFound(f"Wiki with slug '{slug}' not found")
-                
-            cursor.execute("""
-                SELECT id, title, slug 
-                FROM pages 
-                WHERE wiki_id = ?
-            """, (row['id'],))
-            pages = [dict(page) for page in cursor.fetchall()]
-            
-            return WikiInstance(
-                id=row['id'],
-                name=row['name'],
-                slug=row['slug'],
-                owner_id=row['owner_id'],
-                owner_username=row['owner_username'],
-                created_at=row['created_at'],
-                pages=pages
-            )
-
+    @classmethod
+    def get_wiki_by_slug(cls, slug):
+     """Retrieve wiki by slug with owner and page information"""
+     with closing(get_db_connection()) as conn:
+         conn.row_factory = sqlite3.Row
+         cursor = conn.cursor()
+         cursor.execute("""
+             SELECT w.*, u.username as owner_username 
+             FROM wikis w
+             JOIN users u ON w.owner_id = u.id
+             WHERE w.slug = ?
+         """, (slug,))
+         row = cursor.fetchone()
+         if not row:
+             raise WikiNotFound(f"Wiki with slug '{slug}' not found")
+        
+         cursor.execute("""
+             SELECT id, title, slug 
+             FROM pages 
+             WHERE wiki_id = ?
+         """, (row['id'],))
+         pages = [dict(page) for page in cursor.fetchall()]
+        
+         return cls(
+             id=row['id'],
+             name=row['name'],
+             slug=row['slug'],
+             owner_id=row['owner_id'],
+             owner_username=row['owner_username'],
+             created_at=row['created_at'],
+             description=row['description'] or "",
+             pages=pages
+         )
     def add_page(self, page):
         """Addiciona a pagina a essa instancia"""
         page.wiki_id = self.id
@@ -207,9 +208,9 @@ class WikiInstance:
         with closing(get_db_connection()) as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "INSERT INTO wikis (name, slug, description, owner_id, created_at) VALUES (?, ?, ?, ?)",
-                (name, slug, description, owner.id, created_at),
-            )
+            "INSERT INTO wikis (name, slug, description, owner_id, created_at) VALUES (?, ?, ?, ?, ?)",  
+            (name, slug, description, owner.id, created_at),  
+        )
             wiki_id = cursor.lastrowid
             conn.commit()
 
