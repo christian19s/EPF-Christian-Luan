@@ -49,6 +49,8 @@ class WikiController:
         self.app.route("/wikis/<wiki_slug>/upload-media", method="POST", callback=self.upload_media)
         self.app.route("/media/<wiki_id:int>/<filename>", method="GET", callback=self.serve_media)
         self.app.route("/media/delete/<media_id:int>", method="POST", callback=self.delete_media)
+        # dev routes
+        self.app.route("/dev/wiki-debug", method="GET", callback=self.dev_wiki_debug)
 
     def get_current_user(self):
         """Get authenticated user from session"""
@@ -154,6 +156,7 @@ class WikiController:
                  (description, wiki.id)
              )
              conn.commit()
+             wiki = self.wiki_service.create_wiki(name,slug,description,user)
         
         
          if hx_mode:
@@ -645,4 +648,256 @@ class WikiController:
             print(f"Error fetching user contributions: {str(e)}")
             return []
 
+
+#==================================DEBUGGING TIHNGS
+
+    def dev_wiki_debug(self):
+     """Detailed debug route to test every step of wiki creation"""
+     tests = []
+     test_wiki = None
+    
+    # Test 1: Database connection
+     try:
+         with closing(get_db_connection()) as conn:
+             cursor = conn.cursor()
+             cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+             tables = [row[0] for row in cursor.fetchall()]
+             tests.append({
+                "name": "Database Connection",
+                "status": "success",
+                "details": {
+                    "action": "Connect to database and list tables",
+                    "result": f"Found {len(tables)} tables",
+                    "tables": ", ".join(tables)
+                }
+            })
+     except Exception as e:
+         tests.append({
+            "name": "Database Connection",
+            "status": "error",
+            "details": {
+                "action": "Connect to database",
+                "result": f"Failed: {str(e)}",
+                "solution": "Check database configuration and file permissions"
+            }
+        })
+         return self.render_template("debug_report.tpl", tests=tests)  # Abort early
+
+    # Test 2: User session
+     try:
+        user = self.get_current_user()
+        if user:
+            tests.append({
+                "name": "User Session",
+                "status": "success",
+                "details": {
+                    "action": "Get current user from session",
+                    "result": f"User found: {user.username} (ID: {user.id})",
+                    # Changed from 'role' to 'global_role'
+                    "global_role": user.global_role,
+                    "wiki_roles": f"{len(user.wiki_roles)} assigned roles"
+                }
+            })
+        else:             tests.append({
+                 "name": "User Session",
+                 "status": "warning",
+                 "details": {
+                     "action": "Get current user from session",
+                     "result": "No user logged in",
+                     "solution": "Login required to test wiki creation"
+                 }
+             })
+        return self.render_template("debug_report.tpl", tests=tests)  # Abort early
+     except Exception as e:
+        tests.append({
+            "name": "User Session",
+            "status": "error",
+            "details": {
+                "action": "Get current user from session",
+                "result": f"Failed: {str(e)}",
+                "solution": "Check session configuration and user service"
+            }
+        })
+        return self.render_template("debug_report.tpl", tests=tests)  # Abort early
+
+    # Test 3: Permission system
+     try:
+         can_create = PermissionSystem.can(user, PermissionSystem.CREATE_WIKI)
+         tests.append({
+            "name": "Permission Check",
+            "status": "success" if can_create else "error",
+            "details": {
+                "action": "Check CREATE_WIKI permission",
+                "result": f"User has permission: {can_create}",
+                "required_permission": "CREATE_WIKI",
+                "user_permissions": str(user.permissions)
+            }
+        })
+         if not can_create:
+             return self.render_template("debug_report.tpl", tests=tests)  # Abort early
+     except Exception as e:
+         tests.append({
+            "name": "Permission Check",
+            "status": "error",
+            "details": {
+                "action": "Check CREATE_WIKI permission",
+                "result": f"Failed: {str(e)}",
+                "solution": "Check permission system implementation"
+            }
+        })
+         return self.render_template("debug_report.tpl", tests=tests)  # Abort early
+
+    # Test 4: Wiki creation parameters
+     try:
+         test_slug = f"test-wiki-{int(time.time())}"
+         test_name = "Test Wiki"
+         test_desc = "Debug route test description"
+         tests.append({
+            "name": "Input Parameters",
+            "status": "info",
+            "details": {
+                "action": "Generate test parameters",
+                "name": test_name,
+                "slug": test_slug,
+                "description": test_desc
+            }
+        })
+     except Exception as e:
+         tests.append({
+            "name": "Input Parameters",
+            "status": "error",
+            "details": {
+                "action": "Generate test parameters",
+                "result": f"Failed: {str(e)}",
+                "solution": "Check system time availability"
+            }
+        })
+         return self.render_template("debug_report.tpl", tests=tests)  # Abort early
+
+    # Test 5: Service layer - create_wiki
+     try:
+         wiki = self.wiki_service.create_wiki(test_name, test_slug, test_desc, user)
+         test_wiki = wiki
+         tests.append({
+            "name": "Service Layer - Create Wiki",
+            "status": "success",
+            "details": {
+                "action": "Call wiki_service.create_wiki()",
+                "result": f"Wiki created successfully (ID: {wiki.id})",
+                "returned_object": f"WikiInstance(name='{wiki.name}', slug='{wiki.slug}')"
+            }
+        })
+     except Exception as e:
+         tests.append({
+            "name": "Service Layer - Create Wiki",
+            "status": "error",
+            "details": {
+                "action": "Call wiki_service.create_wiki()",
+                "result": f"Failed: {str(e)}",
+                "solution": "Check WikiService implementation",
+                "traceback": traceback.format_exc()
+            }
+        })
+        # Continue to test database even if creation failed
+
+    # Test 6: Database verification
+     if test_wiki:
+         try:
+             with closing(get_db_connection()) as conn:
+                 cursor = conn.cursor()
+                 cursor.execute("SELECT * FROM wikis WHERE id = ?", (test_wiki.id,))
+                 db_wiki = cursor.fetchone()
+                
+                 if db_wiki:
+                     tests.append({
+                        "name": "Database Verification",
+                        "status": "success",
+                        "details": {
+                            "action": "Verify wiki in database",
+                            "result": "Wiki found in database",
+                            "db_values": {
+                                "id": db_wiki[0],
+                                "name": db_wiki[1],
+                                "slug": db_wiki[2],
+                                "description": db_wiki[3] or "NULL",
+                                "owner_id": db_wiki[4],
+                                "created_at": db_wiki[5]
+                            }
+                        }
+                    })
+                 else:
+                     tests.append({
+                        "name": "Database Verification",
+                        "status": "error",
+                        "details": {
+                            "action": "Verify wiki in database",
+                            "result": "Wiki not found in database",
+                            "solution": "Check database insert logic"
+                        }
+                    })
+         except Exception as e:
+             tests.append({
+                "name": "Database Verification",
+                "status": "error",
+                "details": {
+                    "action": "Verify wiki in database",
+                    "result": f"Failed: {str(e)}",
+                    "solution": "Check database connection"
+                }
+            })
+
+    # Test 7: Load wiki by slug
+     if test_wiki:
+         try:
+             loaded_wiki = self.wiki_service.get_wiki_by_slug(test_slug)
+             tests.append({
+                "name": "Load Wiki by Slug",
+                "status": "success",
+                "details": {
+                    "action": "Load wiki by slug from service",
+                    "result": f"Successfully loaded wiki (ID: {loaded_wiki.id})",
+                    "returned_object": f"WikiInstance(name='{loaded_wiki.name}', slug='{loaded_wiki.slug}')"
+                }
+            })
+         except Exception as e:
+             tests.append({
+                "name": "Load Wiki by Slug",
+                "status": "error",
+                "details": {
+                    "action": "Load wiki by slug from service",
+                    "result": f"Failed: {str(e)}",
+                    "solution": "Check get_wiki_by_slug implementation",
+                    "traceback": traceback.format_exc()
+                }
+            })
+
+    # Test 8: Cleanup
+     if test_wiki:
+         try:
+             with closing(get_db_connection()) as conn:
+                cursor = conn.cursor()
+                cursor.execute("DELETE FROM wikis WHERE id = ?", (test_wiki.id,))
+                conn.commit()
+                tests.append({
+                    "name": "Cleanup",
+                    "status": "success",
+                    "details": {
+                        "action": "Delete test wiki from database",
+                        "result": f"Deleted wiki ID: {test_wiki.id}",
+                        "rows_affected": cursor.rowcount
+                    }
+                })
+         except Exception as e:
+             tests.append({
+                "name": "Cleanup",
+                "status": "error",
+                "details": {
+                    "action": "Delete test wiki from database",
+                    "result": f"Failed: {str(e)}",
+                    "solution": "Check database delete operations",
+                    "traceback": traceback.format_exc()
+                }
+            })
+
+     return self.render_template("debug_report.tpl", tests=tests)
 wiki_controller = WikiController(wiki_routes)
