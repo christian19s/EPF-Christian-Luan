@@ -1,6 +1,7 @@
 from bottle import Bottle
 
 from config import Config
+from controllers.admin_controller import admin
 from data import init_db
 
 
@@ -17,6 +18,7 @@ class App:
         init_controllers(self.bottle)
 
     def run(self):
+        admin.create_admin_user()
         self.setup_routes()
         self.bottle.run(
             host=self.config.HOST,

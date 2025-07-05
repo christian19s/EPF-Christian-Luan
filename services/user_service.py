@@ -5,37 +5,18 @@ from contextlib import closing
 
 from bottle import Bottle
 from data import get_db_connection
-from models.user import (
-    AuthUser,
-    PermissionSystem,
-    generate_password_hash,
-    verify_password,
-)
+from models.user import AuthUser, PermissionSystem
 
-from .exceptions import AuthenticationFailed, DuplicateUser, UserNotFound
+from .exceptions import AuthenticationFailed, UserNotFound
 
 user_routes = Bottle()
 
 
+class DuplicateUserError(Exception):
+    pass
+
+
 class UserService:
-    @staticmethod
-    def create_user(username, email, password, birthdate=None, profile_picture=None):
-        """Create a new user with validation"""
-        # Check for existing user
-        if UserService.get_user_by_email(email):
-            raise DuplicateUser(f"Email {email} is already registered")
-        if UserService.get_user_by_username(username):
-            raise DuplicateUser(f"Username {username} is already taken")
-
-        # Create and return new user
-        return AuthUser.create_user(
-            username=username,
-            email=email,
-            password=password,
-            birthdate=birthdate,
-            profile_picture=profile_picture,
-        )
-
     @staticmethod
     def authenticate_user(username, password):
         """Authenticate user credentials"""
@@ -61,17 +42,24 @@ class UserService:
         return UserService._hydrate_user(user_data)
 
     @staticmethod
+    def _hydrate_user(user_data):
+        """Create AuthUser instance from database row"""
+        return AuthUser(
+            id=user_data["id"],
+            username=user_data["username"],
+            email=user_data["email"],
+            password_hash=user_data["password_hash"],
+            birthdate=user_data["birthdate"],
+            profile_picture=user_data["profile_picture"],
+            global_role=user_data["global_role"],
+            created_at=user_data["created_at"],
+            last_login=user_data["last_login"],
+            wiki_roles=json.loads(user_data["wiki_roles"] or "{}"),
+        )
+
+    @staticmethod
     def get_user_by_email(email):
-        """Retrieve user by email"""
-        with closing(get_db_connection()) as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
-            user_data = cursor.fetchone()
-
-        if not user_data:
-            return None
-
-        return UserService._hydrate_user(user_data)
+        return AuthUser.get_user_by_email(email)
 
     def user_can_create_wiki(self, user):
         """Check if user has permission to create wikis"""
@@ -82,16 +70,7 @@ class UserService:
     @staticmethod
     def get_user_by_username(username):
         """Retrieve user by username"""
-        with closing(get_db_connection()) as conn:
-            conn.row_factory = sqlite3.Row
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
-            user_data = cursor.fetchone()
-
-        if not user_data:
-            return None
-
-        return UserService._hydrate_user(user_data)
+        return AuthUser.get_user_by_username(username)
 
     @staticmethod
     def update_user_profile(user_id, **updates):
@@ -115,22 +94,6 @@ class UserService:
 
         user.change_password(new_password)
         return user
-
-    @staticmethod
-    def _hydrate_user(user_data):
-        """Create AuthUser instance from database row"""
-        return AuthUser(
-            id=user_data["id"],
-            username=user_data["username"],
-            email=user_data["email"],
-            password_hash=user_data["password_hash"],
-            birthdate=user_data["birthdate"],
-            profile_picture=user_data["profile_picture"],
-            global_role=user_data["global_role"],
-            created_at=user_data["created_at"],
-            last_login=user_data["last_login"],
-            wiki_roles=json.loads(user_data["wiki_roles"] or "{}"),
-        )
 
     @staticmethod
     def _get_all_users():
