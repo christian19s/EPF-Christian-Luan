@@ -50,7 +50,13 @@ class AuthUser:
         self.password_hash = password_hash
         self.birthdate = birthdate
         self.profile_picture = profile_picture
-        self.permissions = role or PermissionSystem.DEFAULT_ROLES["global"]
+        if isinstance(permissions, str):
+            try:
+                self.permissions = int(permissions)
+            except ValueError:
+                self.permissions = 0
+        else:
+            self.permissions = permissions or 0
         self.created_at = created_at
         self.last_login = last_login
         self.wiki_roles = wiki_roles or {}

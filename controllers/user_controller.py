@@ -29,20 +29,10 @@ class UserController(BaseController):
 
     # Rotas User
     def setup_routes(self):
-        self.app.route("/users", method="GET", callback=self.list_users)
-        self.app.route("/users/add", method=["GET", "POST"], callback=self.add_user)
-        self.app.route(
-            "/users/edit/<user_id:int>", method=["GET", "POST"], callback=self.edit_user
-        )
-        self.app.route(
-            "/users/delete/<user_id:int>", method="POST", callback=self.delete_user
-        )
         self.app.route("/login", method=["GET", "POST"], callback=self.login)
         self.app.route("/register", method=["GET", "POST"], callback=self.register)
         self.app.route("/dashboard", method="GET", callback=self.dashboard)
-        self.app.route(
-            "/dashboard/update_profile_picture",
-            method="POST",
+        self.app.route("/dashboard/update_profile_picture",method="POST",
             callback=self.update_profile_picture,
         )
  
