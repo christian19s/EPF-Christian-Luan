@@ -7,7 +7,7 @@
 		<script src="home.js"></script>
 	</head>
 	<body>
-		<form action="create/add" method="post">
+		<form action="../wikis/create" method="post">
 			<div class="header">
 					<input type="text" name="nome" placeholder="Nome da Wiki" class="form-name">
 			</div>
@@ -19,6 +19,7 @@
 				</div>
 				<textarea name="texto" placeholder="Descrição" class="form-description"></textarea>
 			</div>
+			<button type="submit"> Enviar </button>
 		</form>
 		<footer>
 		<p> 2025, WikiTree. Todos os direitos reservados.</p>
