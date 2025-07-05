@@ -4,7 +4,7 @@
 <div class="container">
     <div class="dashboard-header">
         <h1>All Wikis</h1>
-        % if user.can(PermissionSystem.CREATE_PAGE):
+        % if user and user.can(PermissionSystem.CREATE_PAGE):
             <a href="/wikis/create" class="btn btn-primary">
                 <i class="fas fa-plus"></i> Create New Wiki
             </a>
@@ -25,12 +25,11 @@
                 <h3 class="wiki-title">
                     <a href="/wikis/{{wiki.slug}}">{{wiki.name}}</a>
                 </h3>
-                <p>Created by {{wiki.owner.username}}</p>
-                <p>{{len(wiki.pages)}} pages</p>
+                <p>Created by {{wiki.owner_username}}</p>
                 
                 <div class="wiki-meta">
                     <span>{{wiki.created_at[:10]}}</span>
-                    % if user.id == wiki.owner_id or user.is_admin():
+                    % if user and (user.id == wiki.owner_id or user.can(PermissionSystem.MANAGE_WIKI, wiki.id)):
                         <div>
                             <a href="/wikis/{{wiki.slug}}/edit" class="btn btn-sm">
                                 <i class="fas fa-edit"></i>

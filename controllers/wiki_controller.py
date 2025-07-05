@@ -5,6 +5,7 @@ from contextlib import closing
 
 from bottle import (TEMPLATE_PATH, Bottle, HTTPResponse, SimpleTemplate,
                     redirect, request, response, static_file, template)
+
 from config import SECRET_KEY, TEMPLATE_DIR
 from data import get_db_connection, get_wiki_upload_path
 from models.permSystem import PermissionSystem
@@ -59,7 +60,6 @@ class WikiController:
         """Render template with common context"""
         from config import TEMPLATE_DIR
         template_path = os.path.join(TEMPLATE_DIR, template_name)
-        
         if not os.path.exists(template_path):
             raise FileNotFoundError(f"Template not found: {template_path}")
         
@@ -87,13 +87,18 @@ class WikiController:
 
     def list_wikis(self):
         try:
+            print("searching wiki!!!")
             wikis = self.wiki_service.wiki_system.get_all_wiki_instances()
             return self.render_template(
                 "wiki_list.tpl",
                 wikis=wikis
             )
         except Exception as e:
-            return self.render_error(f"Error loading wikis: {str(e)}")
+         import traceback
+         print(f"Error loading wikis: {str(e)}")
+         traceback.print_exc()
+         return self.render_error(f"Error loading wikis: {str(e)}")
+
 
     def create_wiki(self):
         user = self.get_current_user()
@@ -187,6 +192,7 @@ class WikiController:
             wiki = self.wiki_service.get_wiki_by_slug(wiki_slug)
             
             # checa permissões
+            print("trying to get permission to edit wiki:")
             if not PermissionSystem.can(user, PermissionSystem.MANAGE_WIKI, wiki.id):
                 return self.render_error("You don't have permission to edit this wiki", 403)
                 
@@ -212,6 +218,7 @@ class WikiController:
             name = request.forms.get("name", "").strip()
             slug = request.forms.get("slug", "").strip()
             description = request.forms.get("description", "").strip()
+            print(f"form data: name:{name},slug:{slug}, desc:{description}")
             
             errors = []
             if not name:
@@ -233,7 +240,7 @@ class WikiController:
             # Update wiki
             wiki.name = name
             wiki.slug = slug
-            self.wiki_service.update_wiki(wiki, user)
+            self.wiki_service.update_wiki(wiki,user)
             
             # Update description
             with closing(get_db_connection()) as conn:

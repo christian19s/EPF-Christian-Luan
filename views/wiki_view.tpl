@@ -19,6 +19,13 @@
             % end
         </div>
     </div>
+    </div>
+% for page in wiki.pages:
+    <li>
+        <a href="/wikis/{{wiki.slug}}/{{page.slug}}">{{page.title}}</a>
+    </li>
+% end
+    </div>
     
     % if wiki.description:
         <p class="mb-lg">{{wiki.description}}</p>

@@ -1,10 +1,11 @@
 import datetime
 import json
+import sqlite3
 from contextlib import closing
 
 from data import get_db_connection
-
 from models.user import AuthUser
+from static.exceptions.exceptions import WikiNotFound
 
 
 class WikiSystem:
@@ -15,7 +16,7 @@ class WikiSystem:
             []
         )  # composicao, o sistema wiki e dono de TODAS as instancias
 
-    def create_wiki_instance(self, name, slug, description, owner):
+    def create_wiki_instance(self, name, slug, owner):
         """Create a new wiki instance (composition)"""
         instance = WikiInstance.create(name, slug, description, owner)
         self._wiki_instances.append(instance)
@@ -37,11 +38,6 @@ class WikiSystem:
             self._load_wiki_instances()
         return next((wi for wi in self._wiki_instances if wi.id == wiki_id), None)
 
-    def get_all_wiki_instances(self):
-        if not self._wiki_instances:
-            self._load_wiki_instances()
-        return self._wiki_instances
-
     def _load_wiki_instances(self):
         """carrega todas as instancias (privado)"""
         with closing(get_db_connection()) as conn:
@@ -54,7 +50,9 @@ class WikiSystem:
                     slug=row["slug"],
                     description=row["description"],
                     owner_id=row["owner_id"],
+                    owner_username=["owner_username"],
                     created_at=row["created_at"],
+
                 )
                 for row in cursor.fetchall()
             ]
@@ -63,15 +61,50 @@ class WikiSystem:
 class WikiInstance:
     """instancia de uma wiki n osistema"""
 
-    def __init__(self, id, name, slug, description, owner_id, created_at):
+    def __init__(self, id, name, slug, owner_id, created_at):
         self.id = id
         self.name = name
         self.slug = slug
         self.description = description
         self.owner_id = owner_id
+        self.owner_username = owner_username
         self.created_at = created_at
-        self._pages = []  # composicao, instancia de wiki tem paginas
+        self._pages = pages or []  # composicao, instancia de wiki tem paginas
         self._moderators = []  # agregacao, moderadores sao usuarios referenciados
+        self.description = ""
+    
+
+    def get_wiki_by_slug(self, slug):
+        """Retrieve wiki by slug with owner and page information"""
+        with closing(get_db_connection()) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT w.*, u.username as owner_username 
+                FROM wikis w
+                JOIN users u ON w.owner_id = u.id
+                WHERE w.slug = ?
+            """, (slug,))
+            row = cursor.fetchone()
+            if not row:
+                raise WikiNotFound(f"Wiki with slug '{slug}' not found")
+                
+            cursor.execute("""
+                SELECT id, title, slug 
+                FROM pages 
+                WHERE wiki_id = ?
+            """, (row['id'],))
+            pages = [dict(page) for page in cursor.fetchall()]
+            
+            return WikiInstance(
+                id=row['id'],
+                name=row['name'],
+                slug=row['slug'],
+                owner_id=row['owner_id'],
+                owner_username=row['owner_username'],
+                created_at=row['created_at'],
+                pages=pages
+            )
 
     def add_page(self, page):
         """Addiciona a pagina a essa instancia"""
