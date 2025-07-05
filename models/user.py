@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+import sqlite3
 from contextlib import closing
 
 import bcrypt
@@ -75,8 +76,11 @@ class AuthUser:
                 PermissionSystem.get_role_for_context(self, wiki_id)
             )
         )
+
     def role_info(self):
-        return f"Global Role: {self.global_role}, Wiki Roles: {len(self.wiki_roles)} wikis"
+        return (
+            f"Global Role: {self.global_role}, Wiki Roles: {len(self.wiki_roles)} wikis"
+        )
 
     def get_wiki_role(self, wiki_id):
         return PermissionSystem.get_role_for_context(self, wiki_id)
@@ -158,13 +162,104 @@ class AuthUser:
         return verify_password(password, self.password_hash)
 
     @staticmethod
-    def create_user(username, email, password, birthdate=None, profile_picture=None):
-        """Create and save a new user to the database"""
+    def get_user_by_email(email):
+        """Retrieve user by email"""
+        with closing(get_db_connection()) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
+            user_data = cursor.fetchone()
+
+        if user_data:
+            return AuthUser(
+                id=user_data["id"],
+                username=user_data["username"],
+                email=user_data["email"],
+                password_hash=user_data["password_hash"],
+                birthdate=user_data["birthdate"],
+                profile_picture=user_data["profile_picture"],
+                global_role=user_data["global_role"],
+                created_at=user_data["created_at"],
+                last_login=user_data["last_login"],
+                wiki_roles=json.loads(user_data["wiki_roles"] or "{}"),
+            )
+        return None
+
+    @staticmethod
+    def get_user_by_username(username):
+        """Retrieve user by username"""
+        with closing(get_db_connection()) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+            user_data = cursor.fetchone()
+
+        if user_data:
+            return AuthUser(
+                id=user_data["id"],
+                username=user_data["username"],
+                email=user_data["email"],
+                password_hash=user_data["password_hash"],
+                birthdate=user_data["birthdate"],
+                profile_picture=user_data["profile_picture"],
+                global_role=user_data["global_role"],
+                created_at=user_data["created_at"],
+                last_login=user_data["last_login"],
+                wiki_roles=json.loads(user_data["wiki_roles"] or "{}"),
+            )
+        return None
+
+    @staticmethod
+    def hydrate_user(user_data):
+        """Create AuthUser instance from database row"""
+        return AuthUser(
+            id=user_data["id"],
+            username=user_data["username"],
+            email=user_data["email"],
+            password_hash=user_data["password_hash"],
+            birthdate=user_data["birthdate"],
+            profile_picture=user_data["profile_picture"],
+            global_role=user_data["global_role"],
+            created_at=user_data["created_at"],
+            last_login=user_data["last_login"],
+            wiki_roles=json.loads(user_data["wiki_roles"] or "{}"),
+        )
+
+    @staticmethod
+    def get_user_by_id(user_id):
+        """Retrieve user by ID"""
+        with closing(get_db_connection()) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+            user_data = cursor.fetchone()
+
+        if not user_data:
+            return None
+
+            return AuthUser.hydrate_user(user_data)
+
+    @staticmethod
+    def create_user(
+        username,
+        email,
+        password,
+        birthdate=None,
+        profile_picture=None,
+        global_role="editor",
+    ):
+        """Create and save a new user to the database with validation"""
+        # Check for existing user
+        if AuthUser.get_user_by_email(email):
+            raise DuplicateUserError(f"Email {email} is already registered")
+        if AuthUser.get_user_by_username(username):
+            raise DuplicateUserError(f"Username {username} is already taken")
+
+        # Hash password
         password_hash = generate_password_hash(password)
         created_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         wiki_roles_json = json.dumps({})
-        global_role = "viewer"  # Default role
 
+        # Create user in database
         with closing(get_db_connection()) as conn:
             cursor = conn.cursor()
             cursor.execute(

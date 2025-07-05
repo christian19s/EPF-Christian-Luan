@@ -8,6 +8,7 @@ from bottle import Bottle, HTTPError, HTTPResponse, redirect, request, response
 from config import SECRET_KEY
 from data import BASE_DIR, get_db_connection
 from models.user import AuthUser
+
 from services.exceptions import (AuthenticationFailed, DuplicateUser,
                                  UserNotFound)
 from services.user_service import UserService
@@ -224,7 +225,7 @@ class UserController(BaseController):
 
             try:
                 print(f"attempting to create user {username}")
-                user = self.user_service.create_user(
+                user = AuthUser.create_user(
                     username=username, email=email, password=password
                 )
 
@@ -360,6 +361,6 @@ class UserController(BaseController):
             print(f"Upload error: {str(e)}")
             traceback.print_exc()
             return old_filename
-
+    #===========================ADMIN USER==================================+#
 
 user_controller = UserController(user_routes)
