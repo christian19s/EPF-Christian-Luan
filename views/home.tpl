@@ -17,12 +17,40 @@
     
     <div class="main">
         <div class="link-table">
-            <h3>Recent Wikis</h3>
-            <ul id="wiki-list">
-                <!-- Dynamic content will be inserted here -->
-                <li>Example Wiki 1</li>
-                <li>Example Wiki 2</li>
-            </ul>
+            <h3><i class="fas fa-clock"></i> Recent Wikis</h3>
+            <div class="wiki-grid">
+                % if recent_wikis:
+                    % for wiki in recent_wikis:
+                    <div class="wiki-card">
+                        <a href="/wikis/{{ wiki['slug'] }}" class="wiki-link">
+                            <div class="wiki-icon">
+                                <i class="fas fa-book-open"></i>
+                            </div>
+                            <div class="wiki-content">
+                                <h4>{{ wiki['name'] }}</h4>
+                                <p class="wiki-meta">
+                                    <span class="wiki-date">
+                                        <i class="far fa-calendar-alt"></i> {{ wiki['created_at'].strftime('%b %d, %Y') }}
+                                    </span>
+                                    <span class="wiki-author">
+                                        <i class="fas fa-user"></i> {{ wiki['owner_username'] }}
+                                    </span>
+                                </p>
+                                % if wiki['description']:
+                                <p class="wiki-description">{{ wiki['description'][:100] }}{% if len(wiki['description']) > 100 %}...{% end %}</p>
+                                % end
+                            </div>
+                        </a>
+                    </div>
+                    % end
+                % else:
+                    <div class="empty-wikis">
+                        <i class="fas fa-book"></i>
+                        <p>No wikis created yet</p>
+                        <a href="/wikis/create" class="create-link">Be the first to create one!</a>
+                    </div>
+                % end
+            </div>
         </div>
         
         <div class="main-p">
@@ -34,10 +62,10 @@
     
     <div class="wiki-buttons">
         <button id="btnCreate" class="create-button">
-            <i class="fas fa-plus"></i> Criar Wiki
+            <i class="fas fa-plus"></i> Create Wiki
         </button>
         <button id="btnView" class="view-button">
-            <i class="fas fa-book"></i> Ver Wikis
+            <i class="fas fa-book"></i> Browse All
         </button>
     </div>
     
