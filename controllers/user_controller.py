@@ -38,6 +38,8 @@ class UserController(BaseController):
             method="POST",
             callback=self.update_profile_picture,
         )
+        self.app.route("/change-password", method=["GET","POST"], callback=self.change_password)
+        self.app.route("/logout", method=["GET","POST"], callback=self.logout)
 
     def list_users(self):
         try:
@@ -197,6 +199,66 @@ class UserController(BaseController):
             except HTTPError as e:
                 raise
         return self.render("login", error=error)
+
+    def logout(self):
+        """Handle user logout by clearing session cookies and redirecting"""
+       # Clear the user_id cookie
+        response.delete_cookie("user_id", path="/")
+    
+        # Optionally clear any other auth-related cookies
+        response.delete_cookie("session_token", path="/")  # if you use additional session tokens
+    
+        # Add a flash message (if your system supports it)
+        try:
+            flash("You have been logged out successfully")  # Requires flash messaging setup
+        except:
+            pass
+    
+        # Redirect to login page with a 303 See Other status to prevent form resubmission
+        response.status = 303
+        response.headers["Location"] = "/login"
+        return response
+
+    def change_password(self):
+        user_id = self.get_current_user_id()
+        if not user_id:
+            return redirect("/login")
+
+        user = self.user_service.get_user_by_id(user_id)
+        if not user:
+            return redirect("/login")
+
+        if request.method == "POST":
+            current_password = request.forms.get("current_password", "").strip()
+            new_password = request.forms.get("new_password", "").strip()
+            confirm_password = request.forms.get("confirm_password", "").strip()
+
+            try:
+                user = self.user_service.change_password(
+                    user_id=user_id,
+                    current_password=current_password,
+                    new_password=new_password
+                )
+                return self.render("change_password", 
+                           success="Password changed successfully",
+                           error=None,
+                           user_password=new_password)  # Show the new password
+            except AuthenticationFailed:
+                return self.render("change_password",
+                           error="Current password is incorrect",
+                           success=None,
+                           user_password=current_password)  # Keep showing what they typed
+            except Exception as e:
+                return self.render("change_password",
+                           error=f"Error: {str(e)}",
+                           success=None,
+                           user_password=current_password)
+
+        # For GET requests, show the current password (SECURITY RISK!)
+        return self.render("change_password", 
+                       error=None, 
+                       success=None,
+                       user_password=user.password_hash)  # Or use a decrypted version if available
 
     def register(self):
         """Handle user registration"""

@@ -13,7 +13,7 @@
     </div>
 
     <footer>
-        <p>&copy; 2025, WikiTree. Todos os direitos reservados.</p>
+        <p> 2025, WikiTree. Todos os direitos reservados.</p>
     </footer>
 
     <!-- Scripts JS no final do body -->
