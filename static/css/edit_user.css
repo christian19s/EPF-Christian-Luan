@@ -1,0 +1,187 @@
+/* Catppuccin Mocha color scheme */
+:root {
+    --base: #1e1e2e;
+    --mantle: #181825;
+    --crust: #11111b;
+    --surface0: #313244;
+    --surface1: #45475a;
+    --surface2: #585b70;
+    --text: #cdd6f4;
+    --subtext0: #a6adc8;
+    --subtext1: #bac2de;
+    --mauve: #cba6f7;
+    --lavender: #b4befe;
+    --blue: #89b4fa;
+    --red: #f38ba8;
+    --green: #a6e3a1;
+    --yellow: #f9e2af;
+    --peach: #fab387;
+}
+
+/* Base styles */
+.edit-profile-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: var(--mantle);
+    border-radius: 12px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--surface0);
+}
+
+.edit-profile-container h1 {
+    color: var(--mauve);
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+/* Profile picture section */
+.profile-picture-section {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+}
+
+.profile-picture-container {
+    position: relative;
+    width: 150px;
+    height: 150px;
+}
+
+.profile-picture {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid var(--mauve);
+}
+
+.change-picture-btn {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--mauve);
+    color: var(--crust);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+/* Form styles */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--subtext1);
+    font-weight: 500;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background-color: var(--surface0);
+    border: 1px solid var(--surface1);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 1rem;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(137, 180, 250, 0.2);
+}
+
+/* Password section */
+.password-section {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background-color: var(--surface0);
+    border-radius: 8px;
+}
+
+.password-section h3 {
+    color: var(--mauve);
+    margin-bottom: 1.5rem;
+}
+
+.password-toggle {
+    position: relative;
+}
+
+.input-wrapper {
+    position: relative;
+}
+
+.toggle-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--subtext0);
+    cursor: pointer;
+}
+
+/* Button styles */
+.save-btn {
+    display: block;
+    width: 100%;
+    padding: 0.75rem;
+    background-color: var(--mauve);
+    color: var(--crust);
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 1rem;
+}
+
+.save-btn:hover {
+    background-color: var(--lavender);
+    transform: translateY(-2px);
+}
+
+/* Alert styles */
+.alert {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border-radius: 8px;
+}
+
+.alert-error {
+    background-color: rgba(243, 139, 168, 0.2);
+    border: 1px solid var(--red);
+    color: var(--red);
+}
+
+.alert-success {
+    background-color: rgba(166, 227, 161, 0.2);
+    border: 1px solid var(--green);
+    color: var(--green);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .edit-profile-container {
+        padding: 1.5rem;
+        margin: 1rem;
+    }
+    
+    .profile-picture-container {
+        width: 120px;
+        height: 120px;
+    }
+}

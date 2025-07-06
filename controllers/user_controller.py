@@ -40,6 +40,7 @@ class UserController(BaseController):
         )
         self.app.route("/change-password", method=["GET","POST"], callback=self.change_password)
         self.app.route("/logout", method=["GET","POST"], callback=self.logout)
+        self.app.route("/user/edit", method=["GET","POST"], callback=self.edit_user)
 
     def list_users(self):
         try:
@@ -91,49 +92,98 @@ class UserController(BaseController):
                 "user_form", user=None, action="/users/add", errors=errors
             )
 
-    def edit_user(self, user_id):
+    def edit_user(self):
+        """Handle user profile editing"""
+        user_id = self.get_current_user_id()
+        if not user_id:
+            return redirect("/login")
+
         try:
             user = self.user_service.get_user_by_id(user_id)
             if not user:
-                return self.render_error("User not found")
-        except UserNotFound:
-            return self.render_error("User not found")
-
-        if request.method == "GET":
-            return self.render(
-                "user_form", user=user, action=f"/users/edit/{user_id}", errors=None
-            )
-
-        username = request.forms.get("username", "").strip()
-        email = request.forms.get("email", "").strip()
-        birthdate = request.forms.get("birthdate", "").strip()
-        profile_picture = self._handle_profile_picture_upload(user.profile_picture)
-
-        errors = []
-        if not username:
-            errors.append("Username is required")
-        if not email:
-            errors.append("Email is required")
-
-        if errors:
-            return self.render(
-                "user_form", user=user, action=f"/users/edit/{user_id}", errors=errors
-            )
-
-        try:
-            self.user_service.update_user_profile(
-                user_id=user_id,
-                username=username,
-                email=email,
-                birthdate=birthdate or None,
-                profile_picture=profile_picture,
-            )
-            return redirect("/users")
+                return redirect("/login")
         except Exception as e:
-            errors = [f"Error updating user: {str(e)}"]
-            return self.render(
-                "user_form", user=user, action=f"/users/edit/{user_id}", errors=errors
-            )
+            print(f"Error fetching user: {str(e)}")
+            return redirect("/login")
+
+        error = None
+        success = None
+
+        if request.method == "POST":
+            # Get form data
+            username = request.forms.get("username", "").strip()
+            email = request.forms.get("email", "").strip()
+            birthdate = request.forms.get("birthdate", "").strip() or None
+            current_password = request.forms.get("current_password", "").strip()
+            new_password = request.forms.get("new_password", "").strip()
+            confirm_password = request.forms.get("confirm_password", "").strip()
+            profile_picture = self._handle_profile_picture_upload(user.profile_picture)
+
+            # Basic validation
+            errors = []
+            if not username:
+                errors.append("Username is required")
+            if not email:
+                errors.append("Email is required")
+
+            # Check if password is being changed
+            changing_password = bool(new_password)
+            if changing_password:
+                if not current_password:
+                    errors.append("Current password is required to change password")
+                elif new_password != confirm_password:
+                    errors.append("New passwords do not match")
+
+            if errors:
+                return self.render("edit_user", 
+                               user=user,
+                               error=", ".join(errors),
+                               success=None)
+
+            try:
+                updates = {
+                    "username": username,
+                    "email": email,
+                    "birthdate": birthdate
+                }
+
+                if profile_picture:
+                    updates["profile_picture"] = profile_picture
+
+                # Verify current password if changing password
+                if changing_password:
+                    if not user.verify_password(current_password):
+                        raise AuthenticationFailed("Current password is incorrect")
+                    updates["password_hash"] = generate_password_hash(new_password)
+
+                # Update user
+                updated_user = self.user_service.update_user_profile(user_id, **updates)
+
+                success = "Profile updated successfully"
+                if changing_password:
+                    success += " and password changed"
+            
+                return self.render("edit_user",
+                               user=updated_user,
+                               error=None,
+                               success=success)
+
+            except AuthenticationFailed as e:
+                return self.render("edit_user",
+                               user=user,
+                               error=str(e),
+                               success=None)
+            except Exception as e:
+                print(f"Error updating profile: {traceback.format_exc()}")
+                return self.render("edit_user",
+                               user=user,
+                               error="An error occurred while updating your profile",
+                               success=None)
+
+        return self.render("edit_user", 
+                        user=user,
+                        error=None,
+                        success=None)
 
     def delete_user(self, user_id):
         try:

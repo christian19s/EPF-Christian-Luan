@@ -1,0 +1,163 @@
+/* Catppuccin Mocha color scheme */
+:root {
+    --base: #1e1e2e;
+    --mantle: #181825;
+    --crust: #11111b;
+    --surface0: #313244;
+    --surface1: #45475a;
+    --surface2: #585b70;
+    --text: #cdd6f4;
+    --subtext0: #a6adc8;
+    --subtext1: #bac2de;
+    --mauve: #cba6f7;
+    --lavender: #b4befe;
+    --blue: #89b4fa;
+    --red: #f38ba8;
+    --green: #a6e3a1;
+    --yellow: #f9e2af;
+    --peach: #fab387;
+}
+
+/* Base styles */
+.login-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--base);
+    background-image: url("https://i.gifer.com/origin/ba/ba105810faa1e0227a5a8877f7cb68ea_w200.gif");
+    background-blend-mode: overlay;
+    background-size: cover;
+    padding: 2rem;
+    transition: all 0.3s ease;
+}
+
+.login-container {
+    max-width: 400px;
+    width: 100%;
+    padding: 2.5rem;
+    background-color: var(--mantle);
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--surface0);
+    transition: all 0.3s ease;
+}
+
+.login-container h2 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    color: var(--mauve);
+    font-size: 1.8rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--subtext1);
+    font-weight: 500;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background-color: var(--surface0);
+    border: 1px solid var(--surface1);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: var(--blue);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(137, 180, 250, 0.2);
+}
+
+.btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    background-color: var(--mauve);
+    color: var(--crust);
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    background-color: var(--lavender);
+    transform: translateY(-2px);
+}
+
+.alert {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+.alert-error {
+    background-color: rgba(243, 139, 168, 0.2);
+    border: 1px solid var(--red);
+    color: var(--red);
+}
+
+.form-links {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1.5rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.form-links a {
+    color: var(--blue);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.2s ease;
+}
+
+.form-links a:hover {
+    color: var(--lavender);
+    text-decoration: underline;
+}
+
+/* Password toggle */
+.password-toggle {
+    position: relative;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--subtext0);
+    cursor: pointer;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    .login-page {
+        padding: 1rem;
+    }
+    
+    .login-container {
+        padding: 1.5rem;
+    }
+    
+    .form-links {
+        flex-direction: column;
+        align-items: center;
+    }
+}
