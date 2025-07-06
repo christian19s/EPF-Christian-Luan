@@ -6,12 +6,12 @@ from contextlib import closing
 
 from bottle import (TEMPLATE_PATH, Bottle, HTTPResponse, SimpleTemplate,
                     redirect, request, response, static_file, template)
-
 from config import SECRET_KEY, TEMPLATE_DIR
 from data import get_db_connection, get_wiki_upload_path
 from models.permSystem import PermissionSystem
 from models.user import AuthUser
 from models.wiki import MediaItem, WikiInstance, WikiPage, WikiSystem
+
 from services import user_service
 from services.user_service import UserService
 from services.wiki_service import WikiService
@@ -220,6 +220,7 @@ class WikiController:
         try:
             wiki = self.wiki_service.get_wiki_by_slug(wiki_slug)
             pages = self.wiki_service.get_wiki_pages(wiki.id)
+            wiki.description = description or ""
             
             # get desc wiki
             with closing(get_db_connection()) as conn:
@@ -262,6 +263,8 @@ class WikiController:
                         "SELECT description FROM wikis WHERE id = ?", 
                         (wiki.id,)
                     )
+                    cursor.execute("SELECT id, name FROM categories ORDER BY name")
+                    categories = [dict(id=row[0], name=row[1]) for row in cursor.fetchall()]
                     result = cursor.fetchone()
                     wiki.description = result[0] if result else ""
                     

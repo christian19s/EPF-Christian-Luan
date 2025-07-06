@@ -8,5 +8,4 @@ venv/
 .git/
 SECRET_KEY.*
 result.*
-wiki_service.*
 *.jpg

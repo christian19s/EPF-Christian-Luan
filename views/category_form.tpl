@@ -74,11 +74,84 @@
 </div>
 
 <style>
+    .container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+    
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: var(--surface1);
+        border: 1px solid var(--surface3);
+        border-radius: 4px;
+        text-decoration: none;
+        color: var(--text1);
+        cursor: pointer;
+    }
+    
+    .btn-primary {
+        background: var(--brand);
+        color: white;
+        border-color: var(--brand);
+    }
+    
+    .btn-primary:hover {
+        background: var(--brand-hover);
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+    
+    input[type="text"],
+    textarea,
+    select {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid var(--surface3);
+        border-radius: 4px;
+        background: var(--surface1);
+        color: var(--text1);
+    }
+    
+    textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+    
+    small {
+        display: block;
+        margin-top: 0.25rem;
+        font-size: 0.8rem;
+        color: var(--text2);
+    }
+    
     .alert-error {
         background: var(--surface1);
         border-left: 4px solid var(--red);
         padding: 1rem;
         margin-bottom: 1.5rem;
+    }
+    
+    .alert-error p {
+        margin: 0;
     }
     
     .form-row {
@@ -114,10 +187,11 @@
         padding: 0.5rem;
     }
     
-    .form-error {
-        color: var(--red);
-        font-size: 0.9rem;
-        margin-top: 0.25rem;
+    .form-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        margin-top: 1rem;
     }
 </style>
 

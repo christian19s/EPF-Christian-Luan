@@ -26,7 +26,7 @@
         </div>
     </div>
 
-    % if get('error'):
+    % if error:
         <div class="alert alert-error">{{error}}</div>
     % end
 
@@ -47,7 +47,7 @@
                 <li class="tree-node category-node">
                     <div class="tree-item">
                         <span class="tree-caret"><i class="fas fa-caret-right"></i></span>
-                        <span class="tree-icon"><i class="fas fa-{{category.get('icon', 'folder')}}" style="color: {{category.get('color', 'inherit')}}"></i></span>
+                        <span class="tree-icon"><i class="fas fa-{{category['icon']}}" style="color: {{category['color']}}"></i></span>
                         <span class="tree-label">{{category['name']}}</span>
                         <span class="tree-meta">{{len(category['wikis'])}} wiki{{'s' if len(category['wikis']) != 1 else ''}}</span>
                         % if user and user.can(PermissionSystem.MANAGE_CATEGORIES):
@@ -59,7 +59,8 @@
                         % end
                     </div>
                     
-                    <ul class="tree-nested active">
+                    % if category['wikis']:
+                    <ul class="tree-nested">
                         % for wiki in category['wikis']:
                         <li class="tree-node">
                             <div class="tree-item">
@@ -79,22 +80,10 @@
                                 </div>
                                 % end
                             </div>
-                            % if 'pages' in wiki and wiki['pages']:
-                            <ul class="tree-nested">
-                                % for page in wiki['pages']:
-                                <li class="tree-node">
-                                    <div class="tree-item">
-                                        <span class="tree-icon"><i class="fas fa-file-alt"></i></span>
-                                        <a href="/wikis/{{wiki['slug']}}/{{page['slug']}}" class="tree-label">{{page['title']}}</a>
-                                        <span class="tree-meta">{{page['created_at'][:10]}}</span>
-                                    </div>
-                                </li>
-                                % end
-                            </ul>
-                            % end
                         </li>
                         % end
                     </ul>
+                    % end
                 </li>
                 % end
             </ul>
@@ -103,237 +92,295 @@
 </div>
 
 <style>
-    :root {
-        /* Light theme defaults */
-        --base: #fbf1c7;
-        --mantle: #f2e5bc;
-        --crust: #ebdbb2;
-        --surface0: #d5c4a1;
-        --surface1: #bdae93;
-        --surface2: #a89984;
-        --text: #3c3836;
-        --subtext0: #665c54;
-        --subtext1: #7c6f64;
-        --blue: #458588;
-        
-        /* Tree specific */
-        --tree-line: #bdae93;
-        --tree-icon: #665c54;
-        --tree-hover: #f2e5bc;
-    }
+/* Catppuccin Mocha color palette */
+:root {
+  --base: #1e1e2e;
+  --mantle: #181825;
+  --crust: #11111b;
+  --text: #cdd6f4;
+  --subtext0: #a6adc8;
+  --subtext1: #bac2de;
+  --surface0: #313244;
+  --surface1: #45475a;
+  --surface2: #585b70;
+  --overlay0: #6c7086;
+  --overlay1: #7f849c;
+  --blue: #89b4fa;
+  --red: #f38ba8;
+  --green: #a6e3a1;
+  --yellow: #f9e2af;
+  --peach: #fab387;
+  --mauve: #cba6f7;
+  --pink: #f5c2e7;
+  --teal: #94e2d5;
+}
 
-    .dark-mode {
-        --base: #1e1e2e;
-        --mantle: #181825;
-        --crust: #11111b;
-        --surface0: #313244;
-        --surface1: #45475a;
-        --surface2: #585b70;
-        --text: #cdd6f4;
-        --subtext0: #a6adc8;
-        --subtext1: #bac2de;
-        --blue: #89b4fa;
-        
-        --tree-line: #585b70;
-        --tree-icon: #a6adc8;
-        --tree-hover: #45475a;
-    }
+/* Base styles */
+body {
+  background-color: var(--base);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  line-height: 1.6;
+}
 
-    body {
-        background: var(--base);
-        color: var(--text);
-        transition: background 0.3s, color 0.3s;
-    }
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
 
-    .wiki-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1.5rem;
-        padding-bottom: 1rem;
-        border-bottom: 1px solid var(--surface1);
-    }
+/* Header styles */
+.wiki-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--surface0);
+}
 
-    .header-actions {
-        display: flex;
-        gap: 0.5rem;
-        align-items: center;
-    }
+.wiki-header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+  color: var(--subtext1);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
 
-    .directory-tree {
-        background: var(--base);
-        border-radius: 8px;
-        padding: 1rem;
-    }
+.header-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
 
-    .tree {
-        list-style-type: none;
-        padding-left: 0;
-    }
+/* Button styles */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+}
 
-    .tree-node {
-        position: relative;
-        padding-left: 1.5rem;
-        margin: 0.25rem 0;
-    }
+.btn-sm {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.9rem;
+}
 
-    .tree-node:before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 10px;
-        height: 100%;
-        border-left: 1px dashed var(--tree-line);
-    }
+.btn-primary {
+  background-color: var(--mauve);
+  color: var(--crust);
+}
 
-    .tree-node:last-child:before {
-        height: 1.2rem;
-    }
+.btn-primary:hover {
+  background-color: var(--pink);
+}
 
-    .tree-item {
-        display: flex;
-        align-items: center;
-        padding: 0.3rem 0.5rem;
-        border-radius: 4px;
-        transition: background 0.2s;
-    }
+.btn-secondary {
+  background-color: var(--surface0);
+  color: var(--text);
+}
 
-    .tree-item:hover {
-        background: var(--tree-hover);
-    }
+.btn-secondary:hover {
+  background-color: var(--surface1);
+}
 
-    .tree-caret {
-        margin-right: 0.5rem;
-        cursor: pointer;
-        transition: transform 0.2s;
-        color: var(--tree-icon);
-    }
+.btn i {
+  font-size: 0.9em;
+}
 
-    .tree-caret i {
-        width: 1rem;
-        text-align: center;
-    }
+/* Alert styles */
+.alert {
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
 
-    .tree-caret.caret-down i {
-        transform: rotate(90deg);
-    }
+.alert-error {
+  background-color: rgba(243, 139, 168, 0.15);
+  border: 1px solid var(--red);
+  color: var(--red);
+}
 
-    .tree-icon {
-        margin-right: 0.5rem;
-        color: var(--tree-icon);
-        width: 1rem;
-        text-align: center;
-    }
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 3rem 2rem;
+  background-color: var(--mantle);
+  border-radius: 12px;
+  border: 1px dashed var(--surface0);
+}
 
-    .tree-label {
-        flex: 1;
-        color: var(--text);
-        text-decoration: none;
-    }
+.empty-state i {
+  margin-bottom: 1rem;
+  color: var(--overlay0);
+}
 
-    .tree-label:hover {
-        color: var(--blue);
-    }
+.empty-state p {
+  color: var(--subtext0);
+  margin-bottom: 1.5rem;
+}
 
-    .tree-meta {
-        font-size: 0.8rem;
-        color: var(--subtext0);
-        margin-left: 1rem;
-    }
+/* Tree structure */
+.directory-tree {
+  background-color: var(--mantle);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid var(--surface0);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
 
-    .tree-actions {
-        display: flex;
-        gap: 0.8rem;
-        margin-left: 1rem;
-    }
+.tree {
+  list-style-type: none;
+  padding-left: 0;
+  margin: 0;
+}
 
-    .tree-actions a {
-        color: var(--subtext0);
-        transition: color 0.2s;
-    }
+.tree-node {
+  margin-bottom: 0.25rem;
+}
 
-    .tree-actions a:hover {
-        color: var(--blue);
-    }
+.tree-item {
+  display: flex;
+  align-items: center;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  position: relative;
+}
 
-    .tree-nested {
-        display: none;
-        list-style-type: none;
-        padding-left: 1.5rem;
-    }
+.tree-item:hover {
+  background-color: var(--surface0);
+}
 
-    .tree-nested.active {
-        display: block;
-    }
+.tree-caret {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  margin-right: 0.5rem;
+  transition: transform 0.2s ease;
+  color: var(--overlay0);
+}
 
-    /* Category specific styles */
-    .category-node .tree-item {
-        font-weight: bold;
-        background-color: var(--surface0);
-        padding: 0.5rem;
-        margin: 0.5rem 0;
-    }
-    
-    .category-node .tree-icon {
-        color: inherit;
-    }
-    
-    .category-node .tree-meta {
-        font-weight: normal;
-    }
+.tree-caret.caret-down {
+  transform: rotate(90deg);
+}
 
-    /* Button styles */
-    .btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem 1rem;
-        border-radius: 4px;
-        background: var(--surface1);
-        color: var(--text);
-        border: none;
-        cursor: pointer;
-        text-decoration: none;
-        transition: background 0.2s;
-    }
+.tree-caret i {
+  font-size: 0.9rem;
+}
 
-    .btn:hover {
-        background: var(--surface2);
-    }
+.tree-icon {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.75rem;
+  color: var(--blue);
+}
 
-    .btn-sm {
-        padding: 0.3rem 0.7rem;
-        font-size: 0.9rem;
-    }
+.tree-label {
+  flex: 1;
+  color: var(--subtext1);
+  font-weight: 500;
+}
 
-    .btn-primary {
-        background: var(--blue);
-        color: white;
-    }
+.tree-label a {
+  color: var(--subtext1);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
 
-    .btn-secondary {
-        background: var(--surface1);
-        color: var(--text);
-    }
+.tree-label a:hover {
+  color: var(--blue);
+  text-decoration: underline;
+}
 
-    .empty-state {
-        text-align: center;
-        padding: 2rem;
-        color: var(--subtext0);
-    }
+.tree-meta {
+  color: var(--overlay0);
+  font-size: 0.85rem;
+  margin-left: 1rem;
+  font-family: 'Fira Code', monospace;
+}
 
-    .empty-state i {
-        margin-bottom: 1rem;
-        color: var(--subtext0);
-    }
+.tree-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-left: 1rem;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
 
-    .alert-error {
-        padding: 1rem;
-        background: var(--red);
-        color: white;
-        border-radius: 4px;
-        margin-bottom: 1rem;
-    }
+.tree-item:hover .tree-actions {
+  opacity: 1;
+}
+
+.tree-actions a {
+  color: var(--overlay0);
+  transition: color 0.2s ease;
+  text-decoration: none;
+}
+
+.tree-actions a:hover {
+  color: var(--blue);
+}
+
+.tree-actions a.delete:hover {
+  color: var(--red);
+}
+
+.tree-nested {
+  list-style-type: none;
+  padding-left: 2.5rem;
+  margin-top: 0.25rem;
+  border-left: 1px solid var(--surface0);
+  display: none;
+}
+
+.tree-nested.active {
+  display: block;
+}
+
+/* Category node styling */
+.category-node .tree-icon {
+  color: var(--peach);
+}
+
+.category-node .tree-label {
+  color: var(--peach);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .wiki-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .tree-meta {
+    display: none;
+  }
+  
+  .tree-actions {
+    opacity: 1;
+  }
+}
 </style>
 
 <script>

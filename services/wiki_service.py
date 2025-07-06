@@ -6,9 +6,8 @@ import uuid
 from contextlib import closing
 from unicodedata import category
 
-from markdown import markdown
-
 from data import get_db_connection, get_wiki_upload_path
+from markdown import markdown
 from models.permSystem import PermissionSystem
 from models.user import AuthUser
 from models.wiki import MediaItem, WikiInstance, WikiPage, WikiSystem
@@ -614,22 +613,23 @@ class WikiService:
         
         # Get categories with their wikis
          cursor.execute("""
-            SELECT c.id AS category_id, c.name AS category_name, c.slug AS category_slug,
-                   c.color, c.icon,
-                   w.id AS wiki_id, w.name, w.slug, w.owner_id, w.created_at, u.username
-            FROM categories c
-            LEFT JOIN wikis w ON c.id = w.category_id
-            LEFT JOIN users u ON w.owner_id = u.id
-            ORDER BY c.name, w.name
-        """)        
+    SELECT c.id AS category_id, c.name AS category_name, c.slug AS category_slug,
+           c.color, c.icon,
+           w.id AS wiki_id, w.name AS wiki_name, w.slug AS wiki_slug, 
+           w.owner_id, w.created_at, u.username AS owner_username
+    FROM categories c
+    LEFT JOIN wikis w ON c.id = w.category_id
+    LEFT JOIN users u ON w.owner_id = u.id
+    ORDER BY c.name, w.name
+""")        
          categories = {}
          for row in cursor.fetchall():
              cat_id = row["category_id"]
              if cat_id not in categories:
                  categories[cat_id] = {
                     'id': cat_id,
-                    'name': row["name"],
-                    'slug': row["slug"],
+                    'name': row["category_name"],
+                    'slug': row["category_slug"],
                     'color': row["color"],
                     'icon': row["icon"],
                     'wikis': []
