@@ -20,10 +20,9 @@
     <form method="POST" action="{{ request.path }}">
         <div class="form-group">
             <label for="name">Category Name</label>
-            <input type="text" id="name" name="name" 
-                   value="{{ category.name if category else '' }}" 
-                   required>
-        </div>
+                <input type="text" id="name" name="name" 
+       value="{{ category.get('name', '') }}" 
+       required>        </div>
 
         <div class="form-group">
             <label for="slug">URL Slug</label>
