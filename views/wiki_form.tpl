@@ -31,7 +31,18 @@
             <input type="text" id="name" name="name" class="form-control" 
                    value="{{ wiki.name if wiki else '' }}" required>
         </div>
-        
+        <div class="form-group">
+         <label for="category_id">Category</label>
+              <select class="form-control" id="category_id" name="category_id">
+                     <option value="">-- Uncategorized --</option>
+                            % for category in categories:
+                            <option value="{{category['id']}}" 
+                                {{'selected' if wiki and wiki.category_id == category['id'] else ''}}>
+                {{category['name']}}
+            </option>
+        % end
+    </select>
+</div>
         <div class="form-group">
             <label class="form-label" for="slug">URL Slug</label>
             <input type="text" id="slug" name="slug" class="form-control" 

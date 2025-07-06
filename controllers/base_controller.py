@@ -1,4 +1,5 @@
-from bottle import static_file
+from bottle import response, static_file
+
 from data import USER_UPLOADS
 
 
@@ -15,6 +16,14 @@ class BaseController:
         self.app.route("/static/<filename:path>", callback=self.serve_static)
         self.app.route(
             "/uploads/users/<filename:path>", callback=self.serve_user_uploads
+        )
+
+    # helper function:
+    def render_error(self, message, status=500):
+        """Render error page"""
+        response.status = status
+        return self.render_template(
+            "error.tpl", error_message=message, status_code=status
         )
 
     def home_redirect(self):

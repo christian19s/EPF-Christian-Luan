@@ -43,10 +43,16 @@ class PermissionSystem:
     ADMINISTER = 64
     CREATE_WIKI = 128
     DELETE_WIKI = 256
+    MANAGE_CATEGORIES = 512
     ROLES = {
         "viewer": VIEW_PAGE,
-        "editor": VIEW_PAGE | EDIT_PAGE | CREATE_PAGE,
-        "moderator": VIEW_PAGE | EDIT_PAGE | CREATE_PAGE | DELETE_PAGE | MANAGE_WIKI,
+        "editor": VIEW_PAGE | EDIT_PAGE | CREATE_PAGE | MANAGE_CATEGORIES,
+        "moderator": VIEW_PAGE
+        | EDIT_PAGE
+        | CREATE_PAGE
+        | DELETE_PAGE
+        | MANAGE_WIKI
+        | MANAGE_CATEGORIES,
         "admin": (
             VIEW_PAGE
             | EDIT_PAGE
@@ -56,6 +62,7 @@ class PermissionSystem:
             | MANAGE_USERS
             | CREATE_WIKI
             | ADMINISTER
+            | MANAGE_CATEGORIES
         ),
         "superadmin": (
             VIEW_PAGE
@@ -67,6 +74,7 @@ class PermissionSystem:
             | ADMINISTER
             | CREATE_WIKI
             | DELETE_WIKI
+            | MANAGE_CATEGORIES
         ),
     }
 

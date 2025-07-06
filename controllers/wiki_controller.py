@@ -96,10 +96,16 @@ class WikiController:
     def list_wikis(self):
         try:
             print("searching wiki!!!")
-            wikis = self.wiki_service.wiki_system.get_all_wiki_instances()
+            wikis = self.wiki_service.get_all_categories_with_wikis()
+            categories = self.wiki_service.get_all_categories_with_wikis()
+            user = self.get_current_user()
             return self.render_template(
                 "wiki_view.tpl",
-                wikis=wikis
+                categories = categories,
+                wikis=wikis,
+                user = user,
+                PermissionSystem = PermissionSystem,
+                error = None
             )
         except Exception as e:
             import traceback
@@ -108,86 +114,95 @@ class WikiController:
             return self.render_error(f"Error loading wikis: {str(e)}")
 
     def create_wiki(self):
-        user = self.get_current_user()
-        if not user:
-            return redirect("/login")
-        
-        # Determine if this is an HTMX request
-        if not PermissionSystem.can(user, PermissionSystem.CREATE_WIKI):
-            return self.render_error("you dont have permission to create a wiki!")
-        hx_mode = request.headers.get('HX-Request') == 'true'
+     user = self.get_current_user()
+     if not user:
+         return redirect("/login")
+    
+    # Determine if this is an HTMX request
+     if not PermissionSystem.can(user, PermissionSystem.CREATE_WIKI):
+         return self.render_error("you dont have permission to create a wiki!")
+     hx_mode = request.headers.get('HX-Request') == 'true'
+    
+    # Fetch categories (moved to top level)
+     with closing(get_db_connection()) as conn:
+         cursor = conn.cursor()
+         cursor.execute("SELECT id, name FROM categories ORDER BY name")
+         categories = [dict(id=row[0], name=row[1]) for row in cursor.fetchall()]
 
-        if request.method == "GET":
-            return self.render_template(
-                "wiki_form.tpl", 
-                wiki=None,
-                action_url="/wikis/create", 
-                cancel_url="/wikis",
-                hx_mode=hx_mode
-            )
-        
-        # Process form data
-        name = request.forms.get("name", "").strip()
-        slug = request.forms.get("slug", "").strip()
-        description = request.forms.get("description", "").strip()
-        
-        errors = []
-        if not name:
-            errors.append("Wiki name is required")
-        if not slug:
-            # FIXED: Generate slug from name, not title
-            if name:
-                slug = re.sub(r'[^a-z0-9-]+', '', name.lower().replace(' ', '-'))
-                slug = re.sub(r'-+$', '', slug)
-            else:
-                errors.append("Name is required to generate a slug")
-        # FIXED: Add regex validation for slug
-        if slug and not re.match(r'^[a-z0-9\-]+$', slug):
-            errors.append("Slug can only contain lowercase letters, numbers, and hyphens")
-        
-        if errors:
-            return self.render_template(
-                "wiki_form.tpl",
-                wiki=None,
-                errors=errors,
-                action_url="/wikis/create",
-                cancel_url="/wikis",
-                hx_mode=hx_mode
-            )
-        
-        try:
-            wiki = self.wiki_service.create_wiki(name, slug, description, user)
-            if hx_mode:
-                response.headers['HX-Trigger'] = 'newWikiCreated'
-                return '''
-                <div class="text-center p-4">
-                    <i class="fas fa-check-circle text-green-500 text-4xl mb-3"></i>
-                    <h3 class="text-xl font-bold mb-2">Wiki Created!</h3>
-                    <p>Your wiki has been created successfully.</p>
-                    <div class="mt-4">
-                        <a href="/wikis/{}" class="btn btn-primary mr-2">
-                            View Wiki
-                        </a>
-                        <button class="btn" 
-                            _="on click remove .show from #create-wiki-modal then wait 200ms then set #create-wiki-modal's innerHTML to ''">
-                            Close
-                        </button>
-                    </div>
+     if request.method == "GET":
+         return self.render_template(
+             "wiki_form.tpl", 
+             categories=categories,
+             wiki=None,
+            action_url="/wikis/create", 
+            cancel_url="/wikis",
+            hx_mode=hx_mode
+        )
+    
+    # Process form data
+     name = request.forms.get("name", "").strip()
+     slug = request.forms.get("slug", "").strip()
+     description = request.forms.get("description", "").strip()
+     category_id = request.forms.get("category_id","").strip()
+     category_id = int(category_id) if category_id else None
+    
+     errors = []
+     if not name:
+         errors.append("Wiki name is required")
+     if not slug:
+         if name:
+             slug = re.sub(r'[^a-z0-9-]+', '', name.lower().replace(' ', '-'))
+             slug = re.sub(r'-+$', '', slug)
+         else:
+             errors.append("Name is required to generate a slug")
+
+     if slug and not re.match(r'^[a-z0-9\-]+$', slug):
+         errors.append("Slug can only contain lowercase letters, numbers, and hyphens")
+    
+     if errors:
+         return self.render_template(
+            "wiki_form.tpl",
+            wiki=None,
+            categories=categories,  # Added categories here
+            errors=errors,
+            action_url="/wikis/create",
+            cancel_url="/wikis",
+            hx_mode=hx_mode
+        )
+    
+     try:
+         wiki = self.wiki_service.create_wiki(name, slug, description, user,category_id)
+         if hx_mode:
+             response.headers['HX-Trigger'] = 'newWikiCreated'
+             return '''
+            <div class="text-center p-4">
+                <i class="fas fa-check-circle text-green-500 text-4xl mb-3"></i>
+                <h3 class="text-xl font-bold mb-2">Wiki Created!</h3>
+                <p>Your wiki has been created successfully.</p>
+                <div class="mt-4">
+                    <a href="/wikis/{}" class="btn btn-primary mr-2">
+                        View Wiki
+                    </a>
+                    <button class="btn" 
+                        _="on click remove .show from #create-wiki-modal then wait 200ms then set #create-wiki-modal's innerHTML to ''">
+                        Close
+                    </button>
                 </div>
-                '''.format(slug)
-            
-            return redirect(f"/wikis/{wiki.slug}")
-        except Exception as e:
-            errors = [f"Error creating wiki: {str(e)}"]
-            return self.render_template(
-                "wiki_form.tpl",
-                wiki=None,
-                errors=errors,
-                action_url="/wikis/create", 
-                cancel_url="/wikis",
-                hx_mode=hx_mode  
-            )     
-
+            </div>
+            '''.format(slug)
+        
+         return redirect(f"/wikis/{wiki.slug}")
+     except Exception as e:
+         errors = [f"Error creating wiki: {str(e)}"]
+         return self.render_template(
+            "wiki_form.tpl",
+            wiki=None,
+            categories=categories,  # Added categories here
+            errors=errors,
+            action_url="/wikis/create", 
+            cancel_url="/wikis",
+            hx_mode=hx_mode  
+        )     
     def get_create_wiki_form(self):
         """Return just the form for creating a wiki (for HTMX)"""
         user = self.get_current_user()
@@ -261,6 +276,8 @@ class WikiController:
             name = request.forms.get("name", "").strip()
             slug = request.forms.get("slug", "").strip()
             description = request.forms.get("description", "").strip()
+            category_id = request.forms.get("category_id", "").strip()
+            category_id = int(category_id) if category_id else None
             print(f"form data: name:{name},slug:{slug}, desc:{description}")
             
             errors = []
@@ -286,6 +303,14 @@ class WikiController:
             self.wiki_service.update_wiki(wiki,user)
             
             # Update description
+            with closing(get_db_connection()) as conn:
+             cursor = conn.cursor()
+            cursor.execute(
+            "UPDATE wikis SET category_id = ? WHERE id = ?",
+            (category_id, wiki.id)
+        )
+            conn.commit()
+
             with closing(get_db_connection()) as conn:
                 cursor = conn.cursor()
                 cursor.execute(

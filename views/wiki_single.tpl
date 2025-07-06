@@ -18,6 +18,23 @@
             </div>
         % end
     </div>
+    % if wiki.category_id:
+    <div class="wiki-category">
+        <i class="fas fa-folder"></i>
+        <span>{{wiki.category_name}}</span>
+    </div>
+% end
+
+<style>
+.wiki-category {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--subtext0);
+}
+.wiki-category i {
+    margin-right: 0.3rem;
+}
+</style>
 
     % if not pages:
         <div class="card text-center py-4">

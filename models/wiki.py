@@ -72,7 +72,7 @@ class WikiSystem:
 class WikiInstance:
     """instancia de uma wiki n osistema"""
 
-    def __init__(self, id, name, slug, owner_id, created_at, description="", owner_username=None, pages=None):
+    def __init__(self, id, name, slug, owner_id, created_at, description="", owner_username=None, pages=None,category_id=None,category_name = None):
         self.id = id
         self.name = name
         self.slug = slug
@@ -82,6 +82,8 @@ class WikiInstance:
         self.created_at = created_at
         self._pages = pages or [] #composicao, uma wiki tem paginas
         self._moderators = [] # agregacao, uma wiki tem um grupo de usuarios moderadores:W 
+        self.category_id = category_id # agracao, uma wiki tem uma categoria
+        self.category_name = category_name
 
     @classmethod
     def get_wiki_by_slug(cls, slug):

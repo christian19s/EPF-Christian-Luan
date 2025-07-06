@@ -1,4 +1,7 @@
 % rebase('layout', title='All Wikis')
+% categories = get('categories',[])
+% user = get('user',None)
+% error = get('error',None)
 <link rel="stylesheet" href="/static/css/style.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -9,6 +12,11 @@
             % if user and user.can(PermissionSystem.CREATE_WIKI):
                 <a href="/wikis/create" class="btn btn-sm btn-primary">
                     <i class="fas fa-plus"></i> New Wiki
+                </a>
+            % end
+            % if user and user.can(PermissionSystem.MANAGE_CATEGORIES):
+                <a href="/categories/manage" class="btn btn-sm btn-secondary">
+                    <i class="fas fa-tags"></i> Manage Categories
                 </a>
             % end
             <button id="themeToggle" class="btn btn-sm">
@@ -22,7 +30,7 @@
         <div class="alert alert-error">{{error}}</div>
     % end
 
-    % if not wikis:
+    % if not categories:
         <div class="empty-state">
             <i class="fas fa-folder-open fa-2x"></i>
             <p>No wikis created yet</p>
@@ -35,38 +43,58 @@
     % else:
         <div class="directory-tree">
             <ul class="tree">
-                % for wiki in wikis:
-                <li class="tree-node">
+                % for category in categories:
+                <li class="tree-node category-node">
                     <div class="tree-item">
                         <span class="tree-caret"><i class="fas fa-caret-right"></i></span>
-                        <span class="tree-icon"><i class="fas fa-book"></i></span>
-                        <a href="/wikis/{{wiki.slug}}" class="tree-label">{{wiki.name}}</a>
-                        <span class="tree-meta">{{wiki.created_at[:10]}}</span>
-                        % if user and (user.id == wiki.owner_id or user.can(PermissionSystem.MANAGE_WIKI, wiki.id)):
+                        <span class="tree-icon"><i class="fas fa-{{category.get('icon', 'folder')}}" style="color: {{category.get('color', 'inherit')}}"></i></span>
+                        <span class="tree-label">{{category['name']}}</span>
+                        <span class="tree-meta">{{len(category['wikis'])}} wiki{{'s' if len(category['wikis']) != 1 else ''}}</span>
+                        % if user and user.can(PermissionSystem.MANAGE_CATEGORIES):
                         <div class="tree-actions">
-                            <a href="/wikis/{{wiki.slug}}/edit" title="Edit">
+                            <a href="/categories/{{category['id']}}/edit" title="Edit Category">
                                 <i class="fas fa-edit"></i>
-                            </a>
-                            <a href="/wikis/{{wiki.slug}}/delete" title="Delete"
-                                onclick="return confirm('Delete this wiki permanently?')">
-                                <i class="fas fa-trash"></i>
                             </a>
                         </div>
                         % end
                     </div>
-                    % if hasattr(wiki, 'pages') and wiki.pages:
-                    <ul class="tree-nested">
-                        % for page in wiki.pages:
+                    
+                    <ul class="tree-nested active">
+                        % for wiki in category['wikis']:
                         <li class="tree-node">
                             <div class="tree-item">
-                                <span class="tree-icon"><i class="fas fa-file-alt"></i></span>
-                                <a href="/wikis/{{wiki.slug}}/{{page.slug}}" class="tree-label">{{page.title}}</a>
-                                <span class="tree-meta">{{page.created_at[:10]}}</span>
+                                <span class="tree-caret"><i class="fas fa-caret-right"></i></span>
+                                <span class="tree-icon"><i class="fas fa-book"></i></span>
+                                <a href="/wikis/{{wiki['slug']}}" class="tree-label">{{wiki['name']}}</a>
+                                <span class="tree-meta">{{wiki['created_at'][:10]}}</span>
+                                % if user and (user.id == wiki['owner_id'] or user.can(PermissionSystem.MANAGE_WIKI, wiki['id'])):
+                                <div class="tree-actions">
+                                    <a href="/wikis/{{wiki['slug']}}/edit" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="/wikis/{{wiki['slug']}}/delete" title="Delete"
+                                        onclick="return confirm('Delete this wiki permanently?')">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                                % end
                             </div>
+                            % if 'pages' in wiki and wiki['pages']:
+                            <ul class="tree-nested">
+                                % for page in wiki['pages']:
+                                <li class="tree-node">
+                                    <div class="tree-item">
+                                        <span class="tree-icon"><i class="fas fa-file-alt"></i></span>
+                                        <a href="/wikis/{{wiki['slug']}}/{{page['slug']}}" class="tree-label">{{page['title']}}</a>
+                                        <span class="tree-meta">{{page['created_at'][:10]}}</span>
+                                    </div>
+                                </li>
+                                % end
+                            </ul>
+                            % end
                         </li>
                         % end
                     </ul>
-                    % end
                 </li>
                 % end
             </ul>
@@ -238,6 +266,22 @@
         display: block;
     }
 
+    /* Category specific styles */
+    .category-node .tree-item {
+        font-weight: bold;
+        background-color: var(--surface0);
+        padding: 0.5rem;
+        margin: 0.5rem 0;
+    }
+    
+    .category-node .tree-icon {
+        color: inherit;
+    }
+    
+    .category-node .tree-meta {
+        font-weight: normal;
+    }
+
     /* Button styles */
     .btn {
         display: inline-flex;
@@ -265,6 +309,11 @@
     .btn-primary {
         background: var(--blue);
         color: white;
+    }
+
+    .btn-secondary {
+        background: var(--surface1);
+        color: var(--text);
     }
 
     .empty-state {
@@ -302,6 +351,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 nested.classList.toggle('active');
             }
         });
+    });
+
+    // Auto-expand categories with active wikis
+    document.querySelectorAll('.category-node .tree-item').forEach(item => {
+        const nested = item.nextElementSibling;
+        if (nested && nested.querySelector('.tree-node')) {
+            item.querySelector('.tree-caret').classList.add('caret-down');
+            nested.classList.add('active');
+        }
     });
 });
 </script>
