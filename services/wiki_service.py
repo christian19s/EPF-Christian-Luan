@@ -21,86 +21,77 @@ class WikiService:
         self.user_service = user_service
         self.wiki_system = WikiSystem()
 
-        #================================================ operacoes para a wik
+    ###########################################################################
+    # Wiki Operations
+    ###########################################################################
     def create_wiki(self, name, slug, description, owner, category_id=None):
-     """
-    Create a new wiki with optional category
-    
-    Args:
-        name: Wiki name
-        slug: URL-friendly identifier
-        description: Wiki description
-        owner: Owner user (AuthUser or user_id)
-        category_id: Optional ID of the category to assign
-    """
-     if not isinstance(owner, AuthUser):
-         owner = self.user_service.get_user_by_id(owner)
-    
-     if not PermissionSystem.can(owner, PermissionSystem.CREATE_WIKI):
-         raise UnauthorizedAccess("User is not allowed to create wiki")
-    
-    # Validate category if provided
-     if category_id is not None:
-         with closing(get_db_connection()) as conn:
-             cursor = conn.cursor()
-             cursor.execute("SELECT 1 FROM categories WHERE id = ?", (category_id,))
-             if not cursor.fetchone():
-                 raise ValueError(f"Invalid category ID: {category_id}")
-    
-    # Create the wiki instance with category
-     created_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-     with closing(get_db_connection()) as conn:
-         cursor = conn.cursor()
-         cursor.execute(
-            """INSERT INTO wikis 
-            (name, slug, description, owner_id, created_at, category_id) 
-            VALUES (?, ?, ?, ?, ?, ?)""",
-            (name, slug, description, owner.id, created_at, category_id)
-        )         
-         wiki_id = cursor.lastrowid
-         conn.commit()
-    
-    # Return the created wiki instance
-     return WikiInstance(
-        id=wiki_id,
-        name=name,
-        slug=slug,
-        description=description,
-        owner_id=owner.id,
-        created_at=created_at,
-        owner_username=owner.username,
-        category_id=category_id
-    )
-
-
+        if not isinstance(owner, AuthUser):
+            owner = self.user_service.get_user_by_id(owner)
+        
+        if not PermissionSystem.can(owner, PermissionSystem.CREATE_WIKI):
+            raise UnauthorizedAccess("User is not allowed to create wiki")
+        
+        # Validate category if provided
+        if category_id is not None:
+            with closing(get_db_connection()) as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT 1 FROM categories WHERE id = ?", (category_id,))
+                if not cursor.fetchone():
+                    raise ValueError(f"Invalid category ID: {category_id}")
+        
+        # Create the wiki instance with category
+        created_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        with closing(get_db_connection()) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """INSERT INTO wikis 
+                (name, slug, description, owner_id, created_at, category_id) 
+                VALUES (?, ?, ?, ?, ?, ?)""",
+                (name, slug, description, owner.id, created_at, category_id)
+            )         
+            wiki_id = cursor.lastrowid
+            conn.commit()
+        
+        # Return the created wiki instance
+        return WikiInstance(
+            id=wiki_id,
+            name=name,
+            slug=slug,
+            description=description,
+            owner_id=owner.id,
+            created_at=created_at,
+            owner_username=owner.username,
+            category_id=category_id
+        )
 
     def get_wiki_by_slug(self, slug):
-     """Get wiki by slug with owner and description"""
-     with closing(get_db_connection()) as conn:
-         cursor = conn.cursor()
-         cursor.execute("""
-            SELECT w.id, w.name, w.slug, w.owner_id, w.created_at, w.description, 
-                   w.category_id, c.name AS category_name, u.username
-            FROM wikis w
-            JOIN users u ON w.owner_id = u.id
-            LEFT JOIN categories c ON w.category_id = c.id
-            WHERE w.slug = ?
-        """, (slug,))      
-         row = cursor.fetchone()
-         if not row:
-             raise WikiNotFound(f"Wiki with slug '{slug}' not found")
-    
-         return WikiInstance(
-             id=row[0],
-             name=row[1],
-             slug=row[2],
-             owner_id=row[3],
-             created_at=row[4],
-             description=row[5] or "", 
-             owner_username=row[6],
-            category_id = row["category_id"],
-             category_name=row["category_name"]
-         )
+        """Get wiki by slug with owner and description"""
+        with closing(get_db_connection()) as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT w.id, w.name, w.slug, w.owner_id, w.created_at, w.description, 
+                       w.category_id, c.name AS category_name, u.username
+                FROM wikis w
+                JOIN users u ON w.owner_id = u.id
+                LEFT JOIN categories c ON w.category_id = c.id
+                WHERE w.slug = ?
+            """, (slug,))      
+            row = cursor.fetchone()
+            if not row:
+                raise WikiNotFound(f"Wiki with slug '{slug}' not found")
+        
+            return WikiInstance(
+                id=row[0],
+                name=row[1],
+                slug=row[2],
+                owner_id=row[3],
+                created_at=row[4],
+                description=row[5] or "", 
+                owner_username=row[6],
+                category_id = row["category_id"],
+                category_name=row["category_name"]
+            )
+
     def update_wiki(self, wiki, updater):
         if not PermissionSystem.can(updater, PermissionSystem.MANAGE_WIKI, wiki.id):
             raise UnauthorizedAccess("Insufficient permissions to edit wiki")
@@ -148,36 +139,38 @@ class WikiService:
     def get_all_wiki_instances(self):
         return self.wiki_system.get_all_wiki_instances()
 
-    # Page Operations =========================================================
+    ###########################################################################
+    # Page Operations
+    ###########################################################################
     def create_page(self, wiki_id, title, content, user, slug):
         import traceback
         try:
-         """Create new page with debug logging"""
-         print(f"DEBUG: create_page(wiki_id={wiki_id}, title='{title}', slug='{slug}')")
-         import datetime
-         created_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
-         with closing(get_db_connection()) as conn:
-             cursor = conn.cursor()
-             query = """
-                INSERT INTO pages 
-                (title, content, wiki_id, created_by, slug, created_at, updated_at) 
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """
-             params = (title, content, wiki_id, user.id, slug, created_at, created_at)
-             print(f"DEBUG: SQL Query: {query}")
-             print(f"DEBUG: Params: {params}")
+            """Create new page with debug logging"""
+            print(f"DEBUG: create_page(wiki_id={wiki_id}, title='{title}', slug='{slug}')")
+            import datetime
+            created_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             
-             cursor.execute(query, params)
-             page_id = cursor.lastrowid
-             conn.commit()
-            
-             print(f"DEBUG: Page inserted - ID: {page_id}")
-            
+            with closing(get_db_connection()) as conn:
+                cursor = conn.cursor()
+                query = """
+                    INSERT INTO pages 
+                    (title, content, wiki_id, created_by, slug, created_at, updated_at) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """
+                params = (title, content, wiki_id, user.id, slug, created_at, created_at)
+                print(f"DEBUG: SQL Query: {query}")
+                print(f"DEBUG: Params: {params}")
+                
+                cursor.execute(query, params)
+                page_id = cursor.lastrowid
+                conn.commit()
+                
+                print(f"DEBUG: Page inserted - ID: {page_id}")
+                
         except (WikiNotFound, UnauthorizedAccess) as e:
-         print(f"DEBUG ERROR: {type(e).__name__}: {str(e)}")
-         status = 404 if isinstance(e, WikiNotFound) else 403
-         return print(f"{e} status")
+            print(f"DEBUG ERROR: {type(e).__name__}: {str(e)}")
+            status = 404 if isinstance(e, WikiNotFound) else 403
+            return print(f"{e} status")
         except HTTPResponse as e:
             # Allow redirects to propagate normally
             raise e
@@ -197,7 +190,7 @@ class WikiService:
                 updated_at=created_at,
                 slug=slug
             )        
-        
+    
     def get_page_by_slug(self, wiki_id, page_slug):
         """Get page by slug - DEBUGGED VERSION"""
         print(f"DEBUG: get_page_by_slug(wiki_id={wiki_id}, page_slug='{page_slug}')")
@@ -226,7 +219,7 @@ class WikiService:
             else:
                 print(f"DEBUG: Page not found: wiki_id={wiki_id}, slug='{page_slug}'")
                 return None
-    
+
     def page_slug_exists(self, wiki_id, slug):
         """Check if slug exists with debug logging"""
         print(f"DEBUG: page_slug_exists(wiki_id={wiki_id}, slug='{slug}')")
@@ -243,49 +236,46 @@ class WikiService:
             print(f"DEBUG: Slug exists? {exists}")
             return exists
 
-
     def update_page(self, page, editor, comment="Updated"):
-     """Update page content with history tracking and permission check"""
-     if not isinstance(editor, AuthUser):
-         editor = self.user_service.get_user_by_id(editor)
+        """Update page content with history tracking and permission check"""
+        if not isinstance(editor, AuthUser):
+            editor = self.user_service.get_user_by_id(editor)
+            
+        if not PermissionSystem.can(editor, PermissionSystem.EDIT_PAGE, page.wiki_id):
+            raise UnauthorizedAccess("Insufficient permissions to edit page")
         
-     if not PermissionSystem.can(editor, PermissionSystem.EDIT_PAGE, page.wiki_id):
-         raise UnauthorizedAccess("Insufficient permissions to edit page")
-    
-     from datetime import datetime
-     updated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-     with closing(get_db_connection()) as conn:
-         cursor = conn.cursor()
-         # Update page
-         cursor.execute(
-            """UPDATE pages SET 
-            title = ?, content = ?, updated_at = ?
-            WHERE id = ?""",
-            (page.title, page.content, updated_at, page.id)
-        )
-        # Add to page history - FIXED: Added title field
-         cursor.execute(
-            """INSERT INTO page_history 
-            (page_id, title, content, updated_by, updated_at, comment) 
-            VALUES (?, ?, ?, ?, ?, ?)""",
-            (page.id, page.title, page.content, editor.id, updated_at, comment)
-        )
-         conn.commit()
-        
-     return self.get_page_by_id(page.id)
+        from datetime import datetime
+        updated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        with closing(get_db_connection()) as conn:
+            cursor = conn.cursor()
+            # Update page
+            cursor.execute(
+                """UPDATE pages SET 
+                title = ?, content = ?, updated_at = ?
+                WHERE id = ?""",
+                (page.title, page.content, updated_at, page.id)
+            )
+            # Add to page history - FIXED: Added title field
+            cursor.execute(
+                """INSERT INTO page_history 
+                (page_id, title, content, updated_by, updated_at, comment) 
+                VALUES (?, ?, ?, ?, ?, ?)""",
+                (page.id, page.title, page.content, editor.id, updated_at, comment)
+            )
+            conn.commit()
+            
+        return self.get_page_by_id(page.id)
     
     from collections import namedtuple
     
     class HistoryRecord:
-     def __init__(self, id, title, content, updated_at, username, comment):
-        self.id = id
-        self.title = title
-        self.content = content
-        self.updated_at = updated_at
-        self.username = username
-        self.comment = comment
-
-
+        def __init__(self, id, title, content, updated_at, username, comment):
+            self.id = id
+            self.title = title
+            self.content = content
+            self.updated_at = updated_at
+            self.username = username
+            self.comment = comment
 
     def delete_page(self, page_id, deleter):
         """Delete a page with permission check"""
@@ -307,53 +297,53 @@ class WikiService:
         return True
 
     def get_page_history(self, page_id):
-     with closing(get_db_connection()) as conn:
-        cursor = conn.cursor()
-        cursor.execute(
-            """SELECT ph.id, ph.title, ph.content, ph.updated_at, u.username, ph.comment 
-            FROM page_history ph
-            JOIN users u ON ph.updated_by = u.id
-            WHERE page_id = ?
-            ORDER BY ph.updated_at DESC""",
-            (page_id,)
-        )
-        return [
-            {
-                "id": row[0],
-                "title": row[1],  # Added title field
-                "content": row[2],
-                "updated_at": row[3],
-                "username": row[4],
-                "comment": row[5]
-            }
-            for row in cursor.fetchall()
-        ]
-    def get_wiki_pages(self, wiki_id):
-     with closing(get_db_connection()) as conn:
-        conn.row_factory = sqlite3.Row  # Enable row factory
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT * FROM pages WHERE wiki_id = ? ORDER BY created_at DESC",
-            (wiki_id,)
-        )
-        return [
-            WikiPage(
-                id=row["id"],
-                title=row["title"],
-                content=row["content"],
-                wiki_id=row["wiki_id"],
-                created_by=row["created_by"],
-                created_at=row["created_at"],
-                updated_at=row["updated_at"],
-                slug=row["slug"]
+        with closing(get_db_connection()) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """SELECT ph.id, ph.title, ph.content, ph.updated_at, u.username, ph.comment 
+                FROM page_history ph
+                JOIN users u ON ph.updated_by = u.id
+                WHERE page_id = ?
+                ORDER BY ph.updated_at DESC""",
+                (page_id,)
             )
-            for row in cursor.fetchall()
-        ]
+            return [
+                {
+                    "id": row[0],
+                    "title": row[1],  # Added title field
+                    "content": row[2],
+                    "updated_at": row[3],
+                    "username": row[4],
+                    "comment": row[5]
+                }
+                for row in cursor.fetchall()
+            ]
 
+    def get_wiki_pages(self, wiki_id):
+        with closing(get_db_connection()) as conn:
+            conn.row_factory = sqlite3.Row  # Enable row factory
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT * FROM pages WHERE wiki_id = ? ORDER BY created_at DESC",
+                (wiki_id,)
+            )
+            return [
+                WikiPage(
+                    id=row["id"],
+                    title=row["title"],
+                    content=row["content"],
+                    wiki_id=row["wiki_id"],
+                    created_by=row["created_by"],
+                    created_at=row["created_at"],
+                    updated_at=row["updated_at"],
+                    slug=row["slug"]
+                )
+                for row in cursor.fetchall()
+            ]
 
-
-
-    # Media Operations ======================================================== NAO IMPLEMENTADO AINDA !!!!
+    ###########################################################################
+    # Media Operations
+    ###########################################################################
     def upload_media(self, file_upload, wiki_id, uploaded_by):
         """Handle media upload for a wiki with permission check"""
         if not isinstance(uploaded_by, AuthUser):
@@ -435,7 +425,9 @@ class WikiService:
                 for row in cursor.fetchall()
             ]
 
-    # Content Rendering ======================================================= E ISSO QUE SERVE PRA RENDERIZAR A PAGINA
+    ###########################################################################
+    # Content Rendering
+    ###########################################################################
     def render_markdown(self, markdown_content):
         """Convert Markdown to HTML with proper extensions"""
         if not markdown_content:
@@ -455,7 +447,10 @@ class WikiService:
         except Exception as e:
             print(f"Markdown rendering error: {str(e)}")
             return f"<pre>{markdown_content}</pre>"
-    # User Contributions ======================================================
+
+    ###########################################################################
+    # User Contributions & Dashboard
+    ###########################################################################
     def get_user_contributions(self, user_id):
         """Get comprehensive user contributions"""
         contributions = {
@@ -510,52 +505,6 @@ class WikiService:
             
         return contributions
 
-
-
-
-
-    # Helper Methods ===========================DEBUGGING ONLY#
-    def get_wiki_by_id(self, wiki_id):
-        with closing(get_db_connection()) as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT w.*, u.username 
-                FROM wikis w
-                JOIN users u ON w.owner_id = u.id
-                WHERE w.id = ?
-            """, (wiki_id,))
-            row = cursor.fetchone()
-            if not row:
-                raise WikiNotFound(f"Wiki with ID {wiki_id} not found")
-            return WikiInstance(
-                id=row[0],
-                name=row[1],
-                slug=row[2],
-                owner_id=row[3],
-                owner_username=row[5],
-                created_at=row[4]
-            )
-
-    def get_page_by_id(self, page_id):
-     with closing(get_db_connection()) as conn:
-         conn.row_factory = sqlite3.Row  # Add this
-         cursor = conn.cursor()
-         cursor.execute("SELECT * FROM pages WHERE id = ?", (page_id,))
-         row = cursor.fetchone()
-         if not row:
-             raise PageNotFound(f"Page with ID {page_id} not found")
-            
-         return WikiPage(
-            id=row["id"],
-            title=row["title"],
-            content=row["content"],
-            wiki_id=row["wiki_id"],
-            created_by=row["created_by"],
-            created_at=row["created_at"],
-            updated_at=row["updated_at"],
-            slug=row["slug"] 
-        )
-    # User Dashboard ==========================================================
     def get_user_dashboard_data(self, user_id):
         """Get comprehensive data for user dashboard"""
         dashboard_data = {
@@ -615,32 +564,34 @@ class WikiService:
         
         return dashboard_data
 
-##############################################category functions###############################################
+    ###########################################################################
+    # Category Operations
+    ###########################################################################
     def get_all_categories(self):
-     """Get all categories without wikis"""
-     with closing(get_db_connection()) as conn:
-         cursor = conn.cursor()
-         cursor.execute("SELECT * FROM categories ORDER BY name")
-         return [dict(row) for row in cursor.fetchall()]
+        """Get all categories without wikis"""
+        with closing(get_db_connection()) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM categories ORDER BY name")
+            return [dict(row) for row in cursor.fetchall()]
 
     def get_category(self, category_id):
-     """Get single category by ID"""
-     with closing(get_db_connection()) as conn:
-         cursor = conn.cursor()
-         cursor.execute("SELECT * FROM categories WHERE id = ?", (category_id,))
-         row = cursor.fetchone()
-         if not row:
-             return None
-         return dict(row)
+        """Get single category by ID"""
+        with closing(get_db_connection()) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM categories WHERE id = ?", (category_id,))
+            row = cursor.fetchone()
+            if not row:
+                return None
+            return dict(row)
 
     def get_all_categories_with_wikis(self):
-     """Get all categories with their associated wikis"""
-     with closing(get_db_connection()) as conn:
-         conn.row_factory = sqlite3.Row
-         cursor = conn.cursor()
-        
-        # Get categories with their wikis
-         cursor.execute("""
+        """Get all categories with their associated wikis"""
+        with closing(get_db_connection()) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            
+            # Get categories with their wikis
+            cursor.execute("""
     SELECT c.id AS category_id, c.name AS category_name, c.slug AS category_slug,
            c.color, c.icon,
            w.id AS wiki_id, w.name AS wiki_name, w.slug AS wiki_slug, 
@@ -650,68 +601,109 @@ class WikiService:
     LEFT JOIN users u ON w.owner_id = u.id
     ORDER BY c.name, w.name
 """)        
-         categories = {}
-         for row in cursor.fetchall():
-             cat_id = row["category_id"]
-             if cat_id not in categories:
-                 categories[cat_id] = {
-                    'id': cat_id,
-                    'name': row["category_name"],
-                    'slug': row["category_slug"],
-                    'color': row["color"],
-                    'icon': row["icon"],
-                    'wikis': []
+            categories = {}
+            for row in cursor.fetchall():
+                cat_id = row["category_id"]
+                if cat_id not in categories:
+                    categories[cat_id] = {
+                        'id': cat_id,
+                        'name': row["category_name"],
+                        'slug': row["category_slug"],
+                        'color': row["color"],
+                        'icon': row["icon"],
+                        'wikis': []
+                    }
+                
+                if row["wiki_id"]:  # Some categories might be empty
+                    wiki = {
+                        'id': row["wiki_id"],
+                        'name': row["wiki_name"],
+                        'slug': row["wiki_slug"],
+                        'owner_id': row["owner_id"],
+                        'created_at': row["created_at"],
+                        'owner_username': row["owner_username"]
+                    }
+                    categories[cat_id]['wikis'].append(wiki)
+            
+            # Also get uncategorized wikis
+            cursor.execute("""
+                SELECT w.id, w.name, w.slug, w.owner_id, w.created_at, u.username
+                FROM wikis w
+                JOIN users u ON w.owner_id = u.id
+                WHERE w.category_id IS NULL
+            """)
+            uncategorized = [{
+                'id': row["id"],
+                'name': row["name"],
+                'slug': row["slug"],
+                'owner_id': row["owner_id"],
+                'created_at': row["created_at"],
+                'owner_username': row["username"]
+            } for row in cursor.fetchall()]
+            
+            # Add uncategorized as a special category
+            if uncategorized:
+                categories[0] = {
+                    'id': 0,
+                    'name': 'Uncategorized',
+                    'slug': 'uncategorized',
+                    'color': '#6b7280',
+                    'icon': 'folder-open',
+                    'wikis': uncategorized
                 }
             
-             if row["wiki_id"]:  # Some categories might be empty
-                 wiki = {
-                    'id': row["wiki_id"],
-                    'name': row["wiki_name"],
-                    'slug': row["wiki_slug"],
-                    'owner_id': row["owner_id"],
-                    'created_at': row["created_at"],
-                    'owner_username': row["owner_username"]
-                }
-                 categories[cat_id]['wikis'].append(wiki)
-        
-        # Also get uncategorized wikis
-         cursor.execute("""
-            SELECT w.id, w.name, w.slug, w.owner_id, w.created_at, u.username
-            FROM wikis w
-            JOIN users u ON w.owner_id = u.id
-            WHERE w.category_id IS NULL
-        """)
-         uncategorized = [{
-            'id': row["id"],
-            'name': row["name"],
-            'slug': row["slug"],
-            'owner_id': row["owner_id"],
-            'created_at': row["created_at"],
-            'owner_username': row["username"]
-        } for row in cursor.fetchall()]
-        
-        # Add uncategorized as a special category
-         if uncategorized:
-            categories[0] = {
-                'id': 0,
-                'name': 'Uncategorized',
-                'slug': 'uncategorized',
-                'color': '#6b7280',
-                'icon': 'folder-open',
-                'wikis': uncategorized
-            }
-        
-         return list(categories.values())
+            return list(categories.values())
 
-    ####
-    # Debugging Functions =====================================================
+    ###########################################################################
+    # Helper & Debugging Methods
+    ###########################################################################
+    def get_wiki_by_id(self, wiki_id):
+        with closing(get_db_connection()) as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT w.*, u.username 
+                FROM wikis w
+                JOIN users u ON w.owner_id = u.id
+                WHERE w.id = ?
+            """, (wiki_id,))
+            row = cursor.fetchone()
+            if not row:
+                raise WikiNotFound(f"Wiki with ID {wiki_id} not found")
+            return WikiInstance(
+                id=row[0],
+                name=row[1],
+                slug=row[2],
+                owner_id=row[3],
+                owner_username=row[5],
+                created_at=row[4]
+            )
 
+    def get_page_by_id(self, page_id):
+        with closing(get_db_connection()) as conn:
+            conn.row_factory = sqlite3.Row  # Add this
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM pages WHERE id = ?", (page_id,))
+            row = cursor.fetchone()
+            if not row:
+                raise PageNotFound(f"Page with ID {page_id} not found")
+                
+            return WikiPage(
+                id=row["id"],
+                title=row["title"],
+                content=row["content"],
+                wiki_id=row["wiki_id"],
+                created_by=row["created_by"],
+                created_at=row["created_at"],
+                updated_at=row["updated_at"],
+                slug=row["slug"] 
+            )
 
     def get_wiki_page_count(self, wiki_id):
         with closing(get_db_connection()) as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT COUNT(*) FROM pages WHERE wiki_id = ?", (wiki_id,))
             return cursor.fetchone()[0]
+    
     
     def get_wiki_admins(self, wiki_id):
         """Get admin users for a wiki"""
@@ -723,4 +715,9 @@ class WikiService:
                 FROM users
                 WHERE json_extract(wiki_roles, '$."' || ? || '"') = ?
             """, (str(wiki_id), "admin"))
-            return [dict(row) for row in cursor.fetchall()]
+        return [dict(row) for row in cursor.fetchall()] 
+
+
+
+
+

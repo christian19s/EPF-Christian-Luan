@@ -11,7 +11,6 @@ class CategoryService:
     def create_category(
         self, name, slug, description="", color="#6b7280", icon="folder"
     ):
-        """Create a new category and return as Category object"""
         with closing(get_db_connection()) as conn:
             cursor = conn.cursor()
             cursor.execute(

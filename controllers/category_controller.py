@@ -1,8 +1,15 @@
 import os
 import sqlite3
 
-from bottle import (Bottle, HTTPResponse, SimpleTemplate, redirect, request,
-                    response, template)
+from bottle import (
+    Bottle,
+    HTTPResponse,
+    SimpleTemplate,
+    redirect,
+    request,
+    response,
+    template,
+)
 
 from config import SECRET_KEY, TEMPLATE_DIR
 from data import get_db_connection
@@ -10,6 +17,7 @@ from models.category import Category
 from models.permSystem import PermissionSystem
 from services.category_service import CategoryService
 from services.user_service import UserService
+from static.exceptions.exceptions import InvalidInput
 
 category_routes = Bottle()
 
@@ -85,80 +93,81 @@ class CategoryController:
             return self.render_error(f"Error loading categories: {str(e)}")
 
     def create_category(self):
-     user = self.get_current_user()
-     if not user:
-         return redirect("/login")
+        user = self.get_current_user()
+        if not user:
+            return redirect("/login")
 
-     if not PermissionSystem.can(user, PermissionSystem.MANAGE_CATEGORIES):
-         return self.render_error(
-             "You don't have permission to create categories", 403
-         )
+        if not PermissionSystem.can(user, PermissionSystem.MANAGE_CATEGORIES):
+            return self.render_error(
+                "You don't have permission to create categories", 403
+            )
 
-     if request.method == "GET":
-         return self.render_template("category_form.tpl", category=None)
+        if request.method == "GET":
+            return self.render_template("category_form.tpl", category=None)
 
-    # Process POST data
-     name = request.forms.get("name", "").strip()
-     slug = request.forms.get("slug", "").strip()
-     description = request.forms.get("description", "").strip()
-     color = request.forms.get("color", "#6b7280").strip()
-     icon = request.forms.get("icon", "folder").strip()
+        # Process POST data
+        name = request.forms.get("name", "").strip()
+        slug = request.forms.get("slug", "").strip()
+        description = request.forms.get("description", "").strip()
+        color = request.forms.get("color", "#6b7280").strip()
+        icon = request.forms.get("icon", "folder").strip()
 
-     errors = []
-    # Basic validation
-     if not name:
-         errors.append("Category name is required")
-     if not slug:
-         errors.append("URL slug is required")
-     elif len(slug) < 2:
-         errors.append("Slug must be at least 2 characters long")
+        errors = []
+        # Basic validation
+        if not name:
+            errors.append("Category name is required")
+        if not slug:
+            errors.append("URL slug is required")
+        elif len(slug) < 2:
+            errors.append("Slug must be at least 2 characters long")
 
-     if errors:
-         form_data = {
-            "name": name,
-            "slug": slug,
-            "description": description,
-            "color": color,
-            "icon": icon,
-        }
-         return self.render_template(
-            "category_form.tpl", category=form_data, errors=errors
-        )
+        if errors:
+            form_data = {
+                "name": name,
+                "slug": slug,
+                "description": description,
+                "color": color,
+                "icon": icon,
+            }
+            return self.render_template(
+                "category_form.tpl", category=form_data, errors=errors
+            )
 
-     try:
-         self.category_service.create_category(name, slug, description, color, icon)
-         return redirect("/categories/manage")
-     except sqlite3.IntegrityError as e:
-         errors = []
-         if "categories.slug" in str(e):
-             errors.append("A category with this URL slug already exists")
-         elif "categories.name" in str(e):
-            errors.append("A category with this name already exists")
-         else:
-            errors.append("Database error: " + str(e))
-        
-         form_data = {
-            "name": name,
-            "slug": slug,
-            "description": description,
-            "color": color,
-            "icon": icon,
-        }
-         return self.render_template(
-            "category_form.tpl", category=form_data, errors=errors
-        )
-     except Exception as e:
-         errors = [f"Error creating category: {str(e)}"]
-         form_data = {
-            "name": name,
-            "slug": slug,
-            "description": description,
-            "color": color,
-            "icon": icon,
-        }
-         return self.render_template(
-            "category_form.tpl", category=form_data, errors=errors
-        )
+        try:
+            self.category_service.create_category(name, slug, description, color, icon)
+            return redirect("/categories/manage")
+        except sqlite3.IntegrityError as e:
+            errors = []
+            if "categories.slug" in str(e):
+                errors.append("A category with this URL slug already exists")
+            elif "categories.name" in str(e):
+                errors.append("A category with this name already exists")
+            else:
+                errors.append("Database error: " + str(e))
+
+            form_data = {
+                "name": name,
+                "slug": slug,
+                "description": description,
+                "color": color,
+                "icon": icon,
+            }
+            return self.render_template(
+                "category_form.tpl", category=form_data, errors=errors
+            )
+        except InvalidInput as e:
+            errors = [f"Error creating category: {str(e)}"]
+            form_data = {
+                "name": name,
+                "slug": slug,
+                "description": description,
+                "color": color,
+                "icon": icon,
+            }
+            return self.render_template(
+                "category_form.tpl", category=form_data, errors=errors
+            )
+
     def edit_category(self, category_id):
         """Handle category editing"""
         user = self.get_current_user()
@@ -192,22 +201,22 @@ class CategoryController:
                 errors.append("URL slug is required")
 
             if errors:
-                 form_data = {
-                 'id': category.id,
-                 'name': category.name,
-                  'slug': category.slug,
-                 'description': category.description,
-                 'color': category.color,
-                 'icon': category.icon
-                 }
-                 return self.render_template("category_form.tpl", category=form_data)
+                form_data = {
+                    "id": category.id,
+                    "name": category.name,
+                    "slug": category.slug,
+                    "description": category.description,
+                    "color": category.color,
+                    "icon": category.icon,
+                }
+                return self.render_template("category_form.tpl", category=form_data)
             self.category_service.update_category(
                 category_id, name, slug, description, color, icon
             )
             return redirect("/categories/manage")
 
         except Exception as e:
-              return self.render_error(f"Error updating category: {str(e)}")
+            return self.render_error(f"Error updating category: {str(e)}")
 
     def delete_category(self, category_id):
         """Handle category deletion"""

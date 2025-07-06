@@ -167,12 +167,11 @@ class WikiController:
         if not user:
             return redirect("/login")
 
-        # Determine if this is an HTMX request
+        # is this is an HTMX request
         if not PermissionSystem.can(user, PermissionSystem.CREATE_WIKI):
             return self.render_error("you dont have permission to create a wiki!")
         hx_mode = request.headers.get("HX-Request") == "true"
 
-        # Fetch categories (moved to top level)
         with closing(get_db_connection()) as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT id, name FROM categories ORDER BY name")
@@ -245,19 +244,25 @@ class WikiController:
             """.format(
                     slug
                 )
+            if hx_mode:
+             response.headers["HX-Redirect"] = f"/wikis/{wiki.slug}"
+             return ""
+            else:
+             time.sleep(0.4)
+             return redirect(f"/wikis/{wiki.slug}")
 
-            return redirect(f"/wikis/{wiki.slug}")
-        except Exception as e:
-            errors = [f"Error creating wiki: {str(e)}"]
-            return self.render_template(
-                "wiki_form.tpl",
-                wiki=None,
-                categories=categories,  # Added categories here
-                errors=errors,
-                action_url="/wikis/create",
-                cancel_url="/wikis",
-                hx_mode=hx_mode,
-            )
+        except ValueError as e:
+        # This catches our validation errors
+         errors = str(e).split("\n")
+         return self.render_template(
+            "wiki_form.tpl",
+            wiki=None,
+            categories=categories,
+            errors=errors,
+            action_url="/wikis/create",
+            cancel_url="/wikis",
+            hx_mode=hx_mode,
+        )
 
     def get_create_wiki_form(self):
         """Return just the form for creating a wiki (for HTMX)"""
