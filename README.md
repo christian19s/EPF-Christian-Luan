@@ -99,45 +99,6 @@ python main.py
 
 ---
 
-5. A fazer:
-adiciona aqui o que tem a fazer christian:
-1 -- modelagem
-2 -- 
-
-
-
-## ✍️ Personalização
-Para adicionar novos modelos (ex: Atividades):
-
-1. Crie a classe no diretório **models/**.
-
-2. Crie o service correspondente para manipulação do JSON.
-
-3. Crie o controller com as rotas.
-
-4. Crie as views .tpl associadas.
-
----
-
-# A FAZER:
-
-- Docker []
-- Deploy em um server 
-- Database, portar o codigo existente para sql (sqlite) 
-- Tratanento de imagens na DB
-- Usuarios e admins:
-  - sistema de autenticação
-  - sistema de verificaçao de usuarios
-- template da wiki funcional onde um usuario autenticado pode criar uma wiki:
-  - deixar o editor customizar a wiki
-  - salvar tudo isso na database de forma correta
-- Tratamento de erros
-- Diagrama
-- Estilização de CSS
-- JS e HTML da wiki
-- remover tudo relacionado ao exemplo activity
-
-
 ## 🧠 Autor e Licença
 Projeto desenvolvido como template didático para disciplinas de Programação Orientada a Objetos, baseado no [BMVC](https://github.com/hgmachine/bmvc_start_from_this).
 Você pode reutilizar, modificar e compartilhar livremente.
