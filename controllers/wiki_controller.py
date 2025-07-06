@@ -48,7 +48,8 @@ class WikiController:
         self.app.route("/wikis/<wiki_slug>/<page_slug>/delete", method="POST", callback=self.delete_page)
         self.app.route("/wikis/<wiki_slug>/<page_slug>/history", method="GET", callback=self.page_history)
         self.app.route("/wikis/create/form", method="GET", callback=self.get_create_wiki_form)
-        
+        self.app.route("/wikis/<wiki_slug>/pages/create", method=["GET", "POST"], callback=self.create_page)
+        self.app.route("/wikis/<wiki_slug>/<page_slug>", method="GET", callback=self.view_page)
         # Media routes
         self.app.route("/wikis/<wiki_slug>/upload-media", method="POST", callback=self.upload_media)
         self.app.route("/media/<wiki_id:int>/<filename>", method="GET", callback=self.serve_media)
@@ -115,9 +116,6 @@ class WikiController:
         if not PermissionSystem.can(user, PermissionSystem.CREATE_WIKI):
             return self.render_error("you dont have permission to create a wiki!")
         hx_mode = request.headers.get('HX-Request') == 'true'
-        print(f"Admin permissions: {user.get_permission_labels}")
-        print(f"CREATE_WIKI permission: {PermissionSystem.CREATE_WIKI}")
-        print(f"Has permission: { PermissionSystem.CREATE_WIKI == PermissionSystem.CREATE_WIKI}")
 
         if request.method == "GET":
             return self.render_template(
@@ -126,7 +124,7 @@ class WikiController:
                 action_url="/wikis/create", 
                 cancel_url="/wikis",
                 hx_mode=hx_mode
-            ) # contexto hx e importante
+            )
         
         # Process form data
         name = request.forms.get("name", "").strip()
@@ -137,8 +135,14 @@ class WikiController:
         if not name:
             errors.append("Wiki name is required")
         if not slug:
-            errors.append("URL slug is required")
-        if not re.match(r'^[a-z0-9\-]+$', slug):
+            # FIXED: Generate slug from name, not title
+            if name:
+                slug = re.sub(r'[^a-z0-9-]+', '', name.lower().replace(' ', '-'))
+                slug = re.sub(r'-+$', '', slug)
+            else:
+                errors.append("Name is required to generate a slug")
+        # FIXED: Add regex validation for slug
+        if slug and not re.match(r'^[a-z0-9\-]+$', slug):
             errors.append("Slug can only contain lowercase letters, numbers, and hyphens")
         
         if errors:
@@ -148,7 +152,7 @@ class WikiController:
                 errors=errors,
                 action_url="/wikis/create",
                 cancel_url="/wikis",
-                hx_mode=hx_mode  # passa o modo para o tpl
+                hx_mode=hx_mode
             )
         
         try:
@@ -172,7 +176,7 @@ class WikiController:
                 </div>
                 '''.format(slug)
             
-            return redirect(f"/wikis/{slug}")
+            return redirect(f"/wikis/{wiki.slug}")
         except Exception as e:
             errors = [f"Error creating wiki: {str(e)}"]
             return self.render_template(
@@ -318,95 +322,160 @@ class WikiController:
 
     # ===== PAGE HANDLERS =====
     def create_page(self, wiki_slug):
+        """Create new page with enhanced debugging"""
+        print(f"\n===== DEBUG: CREATE_PAGE STARTED =====")
+        print(f"Wiki Slug: {wiki_slug}")
+        
         user = self.get_current_user()
         if not user:
+            print("DEBUG: No user - redirecting to login")
             return redirect("/login")
-            
+        
         try:
+            print(f"DEBUG: Fetching wiki: {wiki_slug}")
             wiki = self.wiki_service.get_wiki_by_slug(wiki_slug)
+            print(f"DEBUG: Found wiki: ID={wiki.id}, Name={wiki.name}")
             
-            # Check permissions
-            if not PermissionSystem.can(user, PermissionSystem.CREATE_PAGE, wiki.id):
-                return self.render_error("Usuario não autenticado!", 403)
-                
+            # Debug permissions
+            can_create = PermissionSystem.can(user, PermissionSystem.CREATE_PAGE, wiki.id)
+            print(f"DEBUG: User permissions - CREATE_PAGE: {can_create}")
+            print(f"DEBUG: User global role: {user.global_role}")
+            print(f"DEBUG: User wiki roles: {user.wiki_roles}")
+            
+            if not can_create:
+                print("DEBUG: Permission denied - rendering error")
+                return self.render_error("Permission denied!", 403)
+            
             if request.method == "GET":
+                print("DEBUG: GET request - rendering form")
                 return self.render_template(
                     "page_form.tpl",
                     page=None,
                     wiki=wiki,
-                    action_url=f"/wikis/{wiki_slug}/pages/create",  
+                    action_url=f"/wikis/{wiki_slug}/pages/create",
                     cancel_url=f"/wikis/{wiki_slug}"
                 )
-                
+            
             # Process form data
             title = request.forms.get("title", "").strip()
-            slug = request.forms.get("slug", "").strip()
+            raw_slug = request.forms.get("slug", "").strip()
             content = request.forms.get("content", "")
+            print(f"DEBUG: Form data - Title: '{title}', Raw Slug: '{raw_slug}'")
             
-            # caso user deixe a slug vasia
-            if not slug:
-                slug = re.sub(r'[^a-z0-9-]+', '', title.lower().replace(' ', '-'))
-
+            # Generate valid slug
+            slug = self.generate_valid_slug(title, raw_slug)
+            print(f"DEBUG: Generated slug: '{slug}'")
+            
             errors = []
             if not title:
-                errors.append("Titulo é necessario!")
+                errors.append("Title is required!")
             if not slug:
-                errors.append("URL da slug é necessario!")
-            if not re.match(r'^[a-z0-9\-]+$', slug):
-                errors.append("Slugs podem conter apenas letreas, hifens e numeros!")
+                errors.append("Could not generate valid slug from title")
+            elif not re.match(r'^[a-z0-9\-]+$', slug):
+                errors.append("Slug can only contain lowercase letters, numbers and hyphens")
             
-            # checa slug unica
-            try:
-                self.wiki_service.get_page_by_slug(wiki.id, slug)
-                errors.append("Slug já existe na wiki!")
-            except PageNotFound:
-                pass  
+            # Debug slug validation
+            print(f"DEBUG: Slug validation errors: {errors}")
+            
+            # Check for existing page - DEBUGGED VERSION
+            if slug and not errors:
+                print(f"DEBUG: Checking slug existence: wiki_id={wiki.id}, slug={slug}")
+                exists = self.wiki_service.page_slug_exists(wiki.id, slug)
+                print(f"DEBUG: Slug exists? {exists}")
+                if exists:
+                    errors.append("A page with this slug already exists!")
             
             if errors:
+                print(f"DEBUG: Validation errors found: {errors}")
                 return self.render_template(
                     "page_form.tpl",
                     page=None,
                     wiki=wiki,
                     errors=errors,
-                    action_url=f"/wikis/{wiki_slug}/pages/create",  
+                    action_url=f"/wikis/{wiki_slug}/pages/create",
                     cancel_url=f"/wikis/{wiki_slug}"
                 )
 
-            # Create page with slug included
+            # Create the page
+            print("DEBUG: Creating page...")
             page = self.wiki_service.create_page(wiki.id, title, content, user, slug)
+            print(f"DEBUG: Page created - ID: {page.id}, Slug: {page.slug}")
             
-            return redirect(f"/wikis/{wiki.slug}/{slug}")
+            # Debug redirect
+            redirect_url = f"/wikis/{wiki.slug}/{page.id}"
+            print(f"DEBUG: Redirecting to: {redirect_url}")
+            return redirect(redirect_url)
             
-        except WikiNotFound:
+        except WikiNotFound as e:
+            print(f"DEBUG ERROR: Wiki not found - {str(e)}")
             return self.render_error("Wiki not found", 404)
         except UnauthorizedAccess as e:
+            print(f"DEBUG ERROR: Unauthorized - {str(e)}")
             return self.render_error(str(e), 403)
         except Exception as e:
+            print(f"DEBUG ERROR: {str(e)}")
+            traceback.print_exc()
             return self.render_error(f"Error creating page: {str(e)}")
+    
+    def generate_valid_slug(self, title, raw_slug):
+        """Generate URL-safe slug with debug logging"""
+        candidate = raw_slug or title
+        print(f"DEBUG: Slug candidate: '{candidate}'")
+        
+        if not candidate:
+            return ""
+        
+        # Step-by-step normalization with debug
+        slug = candidate.lower()
+        print(f"DEBUG: Step 1 - Lowercase: '{slug}'")
+        
+        slug = slug.replace(" ", "-").replace("_", "-")
+        print(f"DEBUG: Step 2 - Replace spaces/underscores: '{slug}'")
+        
+        slug = re.sub(r'[^a-z0-9\-]', '', slug)
+        print(f"DEBUG: Step 3 - Remove invalid chars: '{slug}'")
+        
+        slug = re.sub(r'-+', '-', slug)
+        print(f"DEBUG: Step 4 - Consolidate hyphens: '{slug}'")
+        
+        slug = slug.strip("-")
+        print(f"DEBUG: Step 5 - Trim hyphens: '{slug}'")
+        
+        return slug  
 
     def view_page(self, wiki_slug, page_slug):
         try:
+            user = self.get_current_user()
             wiki = self.wiki_service.get_wiki_by_slug(wiki_slug)
             page = self.wiki_service.get_page_by_slug(wiki.id, page_slug)
             
-            # Render conteudo md da pag
+            if not page:
+                raise PageNotFound(f"Page '{page_slug}' not found")
+            
+            # Render markdown content
             html_content = self.wiki_service.render_markdown(page.content)
             
-            # pega media da pag
+            # Get page media
             media = self.wiki_service.get_page_media(page.id)
+            
+            # Get author information
+            author = self.user_service.get_user_by_id(page.created_by)
             
             return self.render_template(
                 "page_view.tpl",
                 wiki=wiki,
                 page=page,
                 rendered_content=html_content,
-                media=media
+                media=media,
+                author_username=author.username if author else "Unknown",
+                last_editor_username="",  # Implement if you have edit history
+                can_edit=PermissionSystem.can(user, PermissionSystem.EDIT_PAGE, wiki.id) if user else False
             )
-        except (WikiNotFound, PageNotFound):
-            return self.render_error("Page not found", 404)
+        except (WikiNotFound, PageNotFound) as e:
+            return self.render_error(str(e), 404)
         except Exception as e:
+            traceback.print_exc()
             return self.render_error(f"Error loading page: {str(e)}")
-
     def edit_page(self, wiki_slug, page_slug):
         user = self.get_current_user()
         if not user:

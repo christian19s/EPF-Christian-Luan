@@ -2,9 +2,11 @@ import datetime
 import json
 import sqlite3
 from contextlib import closing
+from re import U
 
 from data import get_db_connection
 from models.user import AuthUser
+from services import user_service
 from static.exceptions.exceptions import WikiNotFound
 
 
@@ -155,6 +157,7 @@ class WikiInstance:
                     created_by=row["created_by"],
                     created_at=row["created_at"],
                     updated_at=row["updated_at"],
+                    slug=row["slug"]
                 )
                 for row in cursor.fetchall()
             ]
@@ -232,7 +235,7 @@ class WikiInstance:
 class WikiPage:
     """Representa uma pagina em uma wiki instance"""
 
-    def __init__(self, id, title, content, wiki_id, created_by, created_at, updated_at):
+    def __init__(self, id, title, content, wiki_id, created_by, created_at, updated_at, slug):
         self.id = id
         self.title = title
         self.content = content
@@ -240,15 +243,17 @@ class WikiPage:
         self.created_by = created_by
         self.created_at = created_at
         self.updated_at = updated_at
+        self.slug = slug 
         self._media = []  # agregacaoo, uma pagina tem midias
         self._author = None  # uma pagina tem um autor
 
     # Aggregation Relationships
     @property
     def author(self):
+        from services.user_service import UserService
         """pega autor por id"""
         if not self._author:
-            self._author = AuthUser.get_by_id(self.created_by)
+                self._author = UserService.get_user_by_id(self.created_by)
         return self._author
 
     def add_media(self, media_item):

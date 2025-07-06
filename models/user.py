@@ -5,6 +5,7 @@ import sqlite3
 from contextlib import closing
 
 import bcrypt
+
 from data import get_db_connection, get_user_upload_path
 
 from .permSystem import PermissionSystem
@@ -36,7 +37,7 @@ class AuthUser:
         password_hash,
         birthdate=None,
         profile_picture=None,
-        global_role="viewer",  # Changed from permissions/role
+        global_role="viewer",
         created_at=None,
         last_login=None,
         wiki_roles=None,
@@ -48,7 +49,7 @@ class AuthUser:
         self.password_hash = password_hash
         self.birthdate = birthdate
         self.profile_picture = profile_picture
-        self.global_role = global_role  # Now stores role name
+        self.global_role = global_role
         self.created_at = created_at
         self.last_login = last_login
         self.wiki_roles = wiki_roles or {}
@@ -207,7 +208,7 @@ class AuthUser:
                 last_login=user_data["last_login"],
                 wiki_roles=json.loads(user_data["wiki_roles"] or "{}"),
             )
-        return None  
+        return None
 
     @staticmethod
     def create_user(

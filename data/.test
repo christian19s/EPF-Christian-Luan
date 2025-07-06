@@ -1,0 +1,8 @@
+.
+├── db
+├── __pycache__
+└── uploads
+    ├── users
+    └── wiki
+
+6 directories

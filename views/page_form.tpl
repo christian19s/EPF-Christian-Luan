@@ -1,73 +1,102 @@
-% rebase('layout', title=('Edit Page' if page else 'Create New Page'))
+% rebase('layout', title=page.title if page else "Create Page")
 <link rel="stylesheet" href="/static/css/style.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
-<script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
+<script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
+<script src="/static/js/dark-mode.js"></script>
 
 <div class="container">
     <nav class="breadcrumb mb-md">
         <a href="/wikis">Wikis</a> &raquo;
         <a href="/wikis/{{wiki.slug}}">{{wiki.name}}</a> &raquo;
-        <span>{{ 'Edit Page' if page else 'Create Page' }}</span>
+        <span>{{page.title if page else "Create Page"}}</span>
     </nav>
     
-    <h1>{{ page.title if page else 'Create New Page' }}</h1>
+    <div class="page-header">
+        <div class="flex justify-between items-center">
+            <h1 class="page-title">{{page.title if page else "Create New Page"}}</h1>
+        </div>
+    </div>
     
-    % if get('error'):
-        <div class="alert alert-error">{{error}}</div>
-    % end
-    
-    <form method="POST" action="{{ action_url }}">
-        <div class="form-group">
-            <label class="form-label" for="title">Page Title</label>
-            <input type="text" id="title" name="title" class="form-control" 
-                   value="{{ page.title if page else '' }}" required>
-        </div>
-        
-        <div class="form-group">
-            <label class="form-label" for="slug">URL Slug</label>
-            <input type="text" id="slug" name="slug" class="form-control" 
-                   value="{{ page.slug if page else '' }}" required>
-        </div>
-        
-        <div class="form-group">
-            <label class="form-label" for="content">Content</label>
-            <textarea id="content" name="content" class="form-control" rows="15">{{ page.content if page else '' }}</textarea>
-        </div>
-        
-        <div class="form-group">
-            <label class="form-label" for="comment">Edit Summary (Optional)</label>
-            <input type="text" id="comment" name="comment" class="form-control" 
-                   placeholder="Briefly describe your changes">
-        </div>
-        
-        <button type="submit" class="btn btn-primary">
-            {{ 'Update Page' if page else 'Create Page' }}
-        </button>
-        <a href="{{ cancel_url }}" class="btn">Cancel</a>
-    </form>
+    <div class="content-body">
+        <form method="POST" action="{{action_url}}" enctype="multipart/form-data" id="page-form">
+            <div class="form-group">
+                <label for="title">Page Title</label>
+                <input type="text" class="form-control" id="title" name="title" 
+                       value="{{page.title if page else ''}}" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="slug">URL Slug</label>
+                <input type="text" class="form-control" id="slug" name="slug" 
+                       value="{{page.slug if page else ''}}" required>
+                <small class="form-text text-muted">
+                    Lowercase letters, numbers and hyphens only
+                </small>
+            </div>
+            
+            <div class="form-group">
+                <label for="content">Content</label>
+                <textarea class="form-control" id="content" name="content" rows="15" required>{{page.content if page else ''}}</textarea>
+            </div>
+            
+            % if page: 
+            <div class="form-group">
+                <label for="comment">Edit Comment</label>
+                <input type="text" class="form-control" id="comment" name="comment" 
+                       placeholder="Briefly describe your changes">
+            </div>
+            % end
+            
+            <div class="form-actions mt-4">
+                <button type="submit" class="btn btn-primary">
+                    % if page:
+                    <i class="fas fa-save"></i> Save Changes
+                    % else:
+                    <i class="fas fa-plus"></i> Create Page
+                    % end
+                </button>
+                <a href="{{cancel_url}}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
 </div>
 
 <script>
-    // Initialize Markdown editor
-    const simplemde = new SimpleMDE({ 
-        element: document.getElementById("content"),
-        spellChecker: false,
-        toolbar: [
-            "bold", "italic", "heading", "|",
-            "quote", "unordered-list", "ordered-list", "|",
-            "link", "image", "|",
-            "preview", "guide"
-        ]
-    });
-    
-    // Auto-generate slug from title
-    document.getElementById('title').addEventListener('input', function() {
-        if (!document.getElementById('slug').value) {
-            const slug = this.value
-                .toLowerCase()
-                .replace(/[^\w\s]/g, '')
-                .replace(/\s+/g, '-');
-            document.getElementById('slug').value = slug;
-        }
-    });
+// Initialize EasyMDE
+const easyMDE = new EasyMDE({
+    element: document.getElementById('content'),
+    autoDownloadFontAwesome: false,
+    uploadImage: true,
+    imageUploadEndpoint: '/wikis/{{wiki.slug}}/upload-media',
+    imageCSRFToken: '{{get("csrf_token", "")}}',
+    imagePathAbsolute: true,
+    imageTexts: {
+        sbInit: 'Drag and drop an image or click to browse',
+        sbOnDragEnter: 'Drop your image here',
+        sbOnDrop: 'Uploading...',
+        sbProgress: 'Uploading... (#progress#)',
+        sbOnUploaded: 'Uploaded!',
+    },
+    toolbar: [
+        'bold', 'italic', 'heading', '|',
+        'quote', 'unordered-list', 'ordered-list', '|',
+        'link', 'image', '|',
+        'preview', 'side-by-side', 'fullscreen', '|',
+        'guide'
+    ]
+});
+
+// Auto-slug generation
+document.getElementById('title').addEventListener('blur', function() {
+    const slugField = document.getElementById('slug');
+    if (!slugField.value) {
+        const slug = this.value.toLowerCase()
+            .replace(/\s+/g, '-')    
+            .replace(/[^\w-]+/g, '') 
+            .replace(/-+/g, '-')   
+            .replace(/^-+/, '')     
+            .replace(/-+$/, '');    
+        slugField.value = slug;
+    }
+});
 </script>
