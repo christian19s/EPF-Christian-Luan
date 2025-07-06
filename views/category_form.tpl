@@ -9,7 +9,7 @@
         </a>
     </div>
 
-    % if get('errors'):
+    % if 'errors' in locals() and errors:
         <div class="alert alert-error">
             % for error in errors:
                 <p>{{error}}</p>
@@ -20,21 +20,22 @@
     <form method="POST" action="{{ request.path }}">
         <div class="form-group">
             <label for="name">Category Name</label>
-                <input type="text" id="name" name="name" 
-       value="{{ category.get('name', '') }}" 
-       required>        </div>
+            <input type="text" id="name" name="name" 
+                   value="{{ category.name if hasattr(category, 'name') else (form_data['name'] if 'form_data' in locals() and 'name' in form_data else '') }}" 
+                   required>
+        </div>
 
         <div class="form-group">
             <label for="slug">URL Slug</label>
             <input type="text" id="slug" name="slug" 
-                   value="{{ category.slug if category else '' }}" 
+                   value="{{ category.slug if hasattr(category, 'slug') else (form_data['slug'] if 'form_data' in locals() and 'slug' in form_data else '') }}" 
                    required>
             <small>Lowercase letters, numbers, and hyphens only</small>
         </div>
 
         <div class="form-group">
             <label for="description">Description</label>
-            <textarea id="description" name="description" rows="3">{{ category.description if category else '' }}</textarea>
+            <textarea id="description" name="description" rows="3">{{ category.description if hasattr(category, 'description') else (form_data['description'] if 'form_data' in locals() and 'description' in form_data else '') }}</textarea>
         </div>
 
         <div class="form-row">
@@ -42,9 +43,9 @@
                 <label for="color">Color</label>
                 <div class="color-picker">
                     <input type="color" id="color" name="color" 
-                           value="{{ category.color if category else '#6b7280' }}">
+                           value="{{ category.color if hasattr(category, 'color') else (form_data['color'] if 'form_data' in locals() and 'color' in form_data else '#6b7280') }}">
                     <input type="text" id="color-text" 
-                           value="{{ category.color if category else '#6b7280' }}"
+                           value="{{ category.color if hasattr(category, 'color') else (form_data['color'] if 'form_data' in locals() and 'color' in form_data else '#6b7280') }}"
                            pattern="^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$">
                 </div>
             </div>
@@ -53,9 +54,10 @@
                 <label for="icon">Icon</label>
                 <select id="icon" name="icon" required>
                     % icons = ['folder', 'book', 'tag', 'hashtag', 'star', 'database', 'globe', 'code', 'image', 'file', 'archive', 'box']
+                    % current_icon = category.icon if hasattr(category, 'icon') else (form_data['icon'] if 'form_data' in locals() and 'icon' in form_data else 'folder')
                     % for icon_choice in icons:
                         <option value="{{icon_choice}}" 
-                                {{ 'selected' if category and category.icon == icon_choice else '' }}>
+                                {{ 'selected' if icon_choice == current_icon else '' }}>
                             <i class="fas fa-{{icon_choice}}"></i> {{icon_choice}}
                         </option>
                     % end
@@ -71,7 +73,6 @@
         </div>
     </form>
 </div>
-
 <style>
     .container {
         max-width: 800px;

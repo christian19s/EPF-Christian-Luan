@@ -33,7 +33,6 @@ class AuthUser:
 
 
 class PermissionSystem:
-    # Permission constants
     VIEW_PAGE = 1
     EDIT_PAGE = 2
     CREATE_PAGE = 4
@@ -46,7 +45,7 @@ class PermissionSystem:
     MANAGE_CATEGORIES = 512
     ROLES = {
         "viewer": VIEW_PAGE,
-        "editor": VIEW_PAGE | EDIT_PAGE | CREATE_PAGE | MANAGE_CATEGORIES,
+        "editor": VIEW_PAGE | EDIT_PAGE | CREATE_PAGE | MANAGE_CATEGORIES | CREATE_WIKI,
         "moderator": VIEW_PAGE
         | EDIT_PAGE
         | CREATE_PAGE
