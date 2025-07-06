@@ -16,9 +16,9 @@ class WikiSystem:
             []
         )  # composicao, o sistema wiki e dono de TODAS as instancias
 
-    def create_wiki_instance(self, name, slug, owner):
+    def create_wiki_instance(self, name, slug, description, owner):
         """Create a new wiki instance (composition)"""
-        instance = WikiInstance.create(name, slug, "", owner)
+        instance = WikiInstance.create(name, slug, description, owner)
         self._wiki_instances.append(instance)
         return instance
 
@@ -26,7 +26,7 @@ class WikiSystem:
         """Delete a wiki instance and all its content (composition)"""
         instance = self.get_wiki_instance(wiki_id)
         if instance:
-            instance.delete() #deleta uma instancia inteira
+            instance.delete()  # deleta uma instancia inteira
             self._wiki_instances = [
                 wi for wi in self._wiki_instances if wi.id != wiki_id
             ]
@@ -43,16 +43,17 @@ class WikiSystem:
             self._load_wiki_instances()
         return self._wiki_instances
 
-    
     def _load_wiki_instances(self):
         """Load all wiki instances from database"""
         with closing(get_db_connection()) as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT w.id, w.name, w.slug, w.owner_id, w.created_at, u.username
                 FROM wikis w
                 JOIN users u ON w.owner_id = u.id
-            """)
+            """
+            )
             self._wiki_instances = [
                 WikiInstance(
                     id=row[0],
@@ -60,17 +61,16 @@ class WikiSystem:
                     slug=row[2],
                     owner_id=row[3],
                     created_at=row[4],
-                    owner_username=row[5]
+                    owner_username=row[5],
                 )
                 for row in cursor.fetchall()
             ]
 
 
-
 class WikiInstance:
     """instancia de uma wiki n osistema"""
 
-    def __init__(self, id, name, slug, owner_id, created_at):
+    def __init__(self, id, name, slug, owner_id, created_at, description="", owner_username=None, pages=None):
         self.id = id
         self.name = name
         self.slug = slug
@@ -78,44 +78,49 @@ class WikiInstance:
         self.owner_id = owner_id
         self.owner_username = owner_username
         self.created_at = created_at
-        self._pages = pages or []  # composicao, instancia de wiki tem paginas
-        self._moderators = []  # agregacao, moderadores sao usuarios referenciados
-        self.description = ""
-    
+        self._pages = pages or [] #composicao, uma wiki tem paginas
+        self._moderators = [] # agregacao, uma wiki tem um grupo de usuarios moderadores:W 
 
     @classmethod
     def get_wiki_by_slug(cls, slug):
-     """Retrieve wiki by slug with owner and page information"""
-     with closing(get_db_connection()) as conn:
-         conn.row_factory = sqlite3.Row
-         cursor = conn.cursor()
-         cursor.execute("""
+        """Retrieve wiki by slug with owner and page information"""
+        with closing(get_db_connection()) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute(
+                """
              SELECT w.*, u.username as owner_username 
              FROM wikis w
              JOIN users u ON w.owner_id = u.id
              WHERE w.slug = ?
-         """, (slug,))
-         row = cursor.fetchone()
-         if not row:
-             raise WikiNotFound(f"Wiki with slug '{slug}' not found")
-        
-         cursor.execute("""
+         """,
+                (slug,),
+            )
+            row = cursor.fetchone()
+            if not row:
+                raise WikiNotFound(f"Wiki with slug '{slug}' not found")
+
+            cursor.execute(
+                """
              SELECT id, title, slug 
              FROM pages 
              WHERE wiki_id = ?
-         """, (row['id'],))
-         pages = [dict(page) for page in cursor.fetchall()]
-        
-         return cls(
-             id=row['id'],
-             name=row['name'],
-             slug=row['slug'],
-             owner_id=row['owner_id'],
-             owner_username=row['owner_username'],
-             created_at=row['created_at'],
-             description=row['description'] or "",
-             pages=pages
-         )
+         """,
+                (row["id"],),
+            )
+            pages = [dict(page) for page in cursor.fetchall()]
+
+            return cls(
+                id=row["id"],
+                name=row["name"],
+                slug=row["slug"],
+                owner_id=row["owner_id"],
+                owner_username=row["owner_username"],
+                created_at=row["created_at"],
+                description=row["description"] or "",
+                pages=pages,
+            )
+
     def add_page(self, page):
         """Addiciona a pagina a essa instancia"""
         page.wiki_id = self.id
@@ -203,31 +208,25 @@ class WikiInstance:
     # Db Ops
     @classmethod
     def create(cls, name, slug, description, owner):
-        """Cria uma instancia wiki"""
+        """Cria uma instância wiki com descrição"""
         created_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         with closing(get_db_connection()) as conn:
             cursor = conn.cursor()
             cursor.execute(
-            "INSERT INTO wikis (name, slug, description, owner_id, created_at) VALUES (?, ?, ?, ?, ?)",  
-            (name, slug, description, owner.id, created_at),  
-        )
+                "INSERT INTO wikis (name, slug, description, owner_id, created_at) VALUES (?, ?, ?, ?, ?)",
+                (name, slug, description, owner.id, created_at),
+            )
             wiki_id = cursor.lastrowid
             conn.commit()
-
-        new_instance = cls(wiki_id, name, slug, description, owner.id, created_at)
-        new_instance.add_moderator(owner)  # criador da wiki eh o moderador
-        return new_instance
-
-    def delete(self):
-        """Deleta a wiki e todo seu conteudo"""
-        with closing(get_db_connection()) as conn:
-            cursor = conn.cursor()
-            # deleta pages e media
-            for page in self.get_pages():
-                page.delete()
-            # del  a wiki instancia inteira
-            cursor.execute("DELETE FROM wikis WHERE id = ?", (self.id,))
-            conn.commit()
+        return cls(
+            id=wiki_id,
+            name=name,
+            slug=slug,
+            description=description,
+            owner_id=owner.id,
+            created_at=created_at,
+            owner_username=owner.username
+        )
 
 
 class WikiPage:

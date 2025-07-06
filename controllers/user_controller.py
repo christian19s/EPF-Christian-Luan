@@ -5,10 +5,10 @@ import traceback
 from contextlib import closing
 
 from bottle import Bottle, HTTPError, HTTPResponse, redirect, request, response
+
 from config import SECRET_KEY
 from data import BASE_DIR, get_db_connection
 from models.user import AuthUser
-
 from services.exceptions import (AuthenticationFailed, DuplicateUser,
                                  UserNotFound)
 from services.user_service import UserService
@@ -159,7 +159,7 @@ class UserController(BaseController):
 
             print(f"User found: {user.username} (ID: {user.id})")
             print("Fetching edited pages...")
-            edited_pages = self.get_edited_pages(user_id)
+            edited_pages = []
             print(f"Found {len(edited_pages)} edited pages")
 
             return self.render("dashboard", user=user, edited_pages=edited_pages)
@@ -250,117 +250,79 @@ class UserController(BaseController):
     def update_profile_picture(self):
         user_id = self.get_current_user_id()
         if not user_id:
-            return redirect("/login")
-        redirect_url = request.headers.get("Referer", "/profile")
+            return HTTPResponse(status=401, body="Unauthorized")
+
         try:
             user = self.user_service.get_user_by_id(user_id)
             if not user:
-                return redirect("/login")
+                return HTTPResponse(status=404, body="User not found")
+
             old_filename = user.profile_picture
             new_filename = self._handle_profile_picture_upload(old_filename)
 
-            self.user_service.update_user_profile(
-                user_id=user_id, profile_picture=new_filename
-            )
-        except Exception as e:
-            if e != "":
-                print(f"error: {e}")
-            else:
-                print("this was caught here")
-
-        return redirect(redirect_url)
-
-    def get_edited_pages(self, user_id):
-        """Retrieve pages edited by the user"""
-        user_id = UserService.get_user_by_id(user_id)
-        print("attempting to get data")
-        try:
-            with closing(get_db_connection()) as conn:
-                conn.row_factory = sqlite3.Row
-                cursor = conn.cursor()
-                cursor.execute(
-                    """
-                SELECT 
-                    pages.id AS page_id,
-                    pages.title AS page_title,
-                    wikis.id AS wiki_id,
-                    wikis.name AS wiki_name,
-                    page_edit_history.edit_time
-                FROM page_edit_history
-                JOIN pages ON page_edit_history.page_id = pages.id
-                JOIN wikis ON pages.wiki_id = wikis.id
-                WHERE page_edit_history.user_id = ?
-                ORDER BY page_edit_history.edit_time DESC
-                LIMIT 50
-            """,
-                    (user_id,),
+            if new_filename and new_filename != old_filename:
+                self.user_service.update_user_profile(
+                    user_id=user_id, profile_picture=new_filename
                 )
-                results = cursor.fetchall()
-                return [dict(row) for row in results]
+                # Return new image HTML
+                new_url = f"/uploads/users/{new_filename}"
+                return f'<img src="{new_url}" alt="Profile Picture" class="profile-picture" id="profileImage">'
+            else:
+                # Return current image if no change
+                return f'<img src="{user.get_profile_picture_url()}" alt="Profile Picture" class="profile-picture" id="profileImage">'
         except Exception as e:
-            print(f"Error fetching edited pages: {str(e)}")
-        return []
+            print(f"Error: {str(e)}")
+            traceback.print_exc()
+            return HTTPResponse(status=500, body="Error updating profile")
 
     def _handle_profile_picture_upload(self, old_filename=None):
         from data import get_user_upload_path
 
         UPLOAD_DIR = get_user_upload_path()
-        print("trying to upload profile picture")
+
         profile_picture = request.files.get("profile_picture")
         if not profile_picture or not profile_picture.filename:
             return old_filename
-        print(f"file recieved {old_filename}")
-        print(f"UPLOAD_DIR: {UPLOAD_DIR}")
-        print(f"Current working directory: {os.getcwd()}")
-        ext = os.path.splitext(profile_picture.filename)[1].lower()
-        ext = ext.strip().lower()
+
+        # Extract file extension
+        ext = os.path.splitext(profile_picture.filename)[1].lower().strip()
+        if not ext:
+            return old_filename
+
+        # Generate new filename
         filename = secrets.token_hex(8) + ext
 
-        MAX_SIZE = 20 * 1024 * 1024
-        profile_picture.file.seek(0, 2)
-        file_size = profile_picture.file.tell()
+        # Validate file size
+        MAX_SIZE = 20 * 1024 * 1024  # 20MB
+        file_size = len(profile_picture.file.read())
         profile_picture.file.seek(0)
 
         if file_size > MAX_SIZE:
-            print(f"file {file_size} too large, aborting ")
             return old_filename
 
-        if ext not in (".jpg", ".jpeg", ".png", ".gif"):
-            print("invalid format detected")
+        # Validate file type
+        if ext not in (".jpg", ".jpeg", ".png", ".gif", ".webp"):
             return old_filename
-        absolute_path = UPLOAD_DIR / filename
+
         try:
+            # Ensure directory exists
+            UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-            os.makedirs(os.path.dirname(absolute_path), exist_ok=True)
-            print(f"Saving to: {absolute_path}")
+            # Save file
+            new_file_path = UPLOAD_DIR / filename
+            profile_picture.save(str(new_file_path), overwrite=True)
 
-            with open(absolute_path, "wb") as f:
-                chunk_size = 20000
-                while True:
-                    chunk = profile_picture.file.read(chunk_size)
-                    if not chunk:
-                        break
-                    f.write(chunk)
-
-            print(f"Successfully saved to {absolute_path}")
-
-            # Delete old file if it exists
+            # Delete old file
             if old_filename:
-                old_abs_path = UPLOAD_DIR / "uploads" / old_filename
-                print(f"olf file found at: {old_abs_path}")
-                if os.path.exists(old_abs_path):
-                    try:
-                        os.remove(old_abs_path)
-                        print(f"Deleted old file: {old_abs_path}")
-                    except Exception as e:
-                        print(f"Could not delete old file: {str(e)}")
+                old_file_path = UPLOAD_DIR / old_filename
+                if old_file_path.exists():
+                    old_file_path.unlink()
 
             return filename
-
         except Exception as e:
             print(f"Upload error: {str(e)}")
             traceback.print_exc()
-            return old_filename
-    #===========================ADMIN USER==================================+#
+            return old_filename  # ===========================ADMIN USER==================================+#
+
 
 user_controller = UserController(user_routes)

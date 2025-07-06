@@ -4,6 +4,7 @@ import sqlite3
 from contextlib import closing
 
 from bottle import Bottle
+
 from data import get_db_connection
 from models.user import AuthUser, PermissionSystem
 
@@ -74,13 +75,16 @@ class UserService:
 
     @staticmethod
     def update_user_profile(user_id, **updates):
-        """Update user profile information"""
-        user = UserService.get_user_by_id(user_id)
-        if not user:
-            raise UserNotFound(f"User ID {user_id} not found")
-        if updates:
-            user.update_profile(**updates)
-        return user
+        with closing(get_db_connection()) as conn:
+            cursor = conn.cursor()
+            set_clause = ", ".join([f"{k} = ?" for k in updates.keys()])
+            values = list(updates.values())
+            values.append(user_id)
+
+            cursor.execute(f"UPDATE users SET {set_clause} WHERE id = ?", values)
+            conn.commit()
+
+        return UserService.get_user_by_id(user_id)
 
     @staticmethod
     def change_password(user_id, current_password, new_password):

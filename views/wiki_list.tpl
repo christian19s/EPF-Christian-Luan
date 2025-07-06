@@ -1,13 +1,11 @@
 % rebase('layout', title='All Wikis')
-<link rel="stylesheet" href="/static/css/theme.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<script src="https://unpkg.com/htmx.org@1.9.6"></script>
-<script src="https://unpkg.com/hyperscript.org@0.9.11"></script>
+<link rel="stylesheet" href="/static/css/style.css">
 
 <div class="container">
     <div class="dashboard-header">
         <h1>All Wikis</h1>
-        % if user and user.can(PermissionSystem.CREATE_WIKI):
+        <div class="flex items-center gap-4">
+            % if user and user.can(PermissionSystem.CREATE_WIKI):
             <button class="btn btn-primary"
                 hx-get="/wikis/create/form"
                 hx-target="#create-wiki-modal"
@@ -15,7 +13,8 @@
                 _="on htmx:afterOnShow add .show to #create-wiki-modal">
                 <i class="fas fa-plus"></i> Create New Wiki
             </button>
-        % end
+            % end
+        </div>
     </div>
 
     % if get('error'):
@@ -99,15 +98,16 @@
         z-index: 1000;
         opacity: 0;
         transition: opacity 0.3s;
+        pointer-events: none;
     }
     
     .modal.show {
         opacity: 1;
-        display: flex;
+        pointer-events: auto;
     }
     
     .modal-content {
-        background: var(--surface0);
+        background: var(--card-bg);
         border-radius: 12px;
         width: 90%;
         max-width: 600px;
@@ -135,10 +135,66 @@
     .close {
         background: none;
         border: none;
-        color: var(--text);
+        color: var(--text-color);
         font-size: 2rem;
         cursor: pointer;
         padding: 0 1rem;
+    }
+    
+    /* Wiki grid */
+    .wiki-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+    
+    .wiki-card {
+        background: var(--card-bg);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+    
+    .wiki-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .wiki-thumbnail {
+        height: 150px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 3rem;
+    }
+    
+    .wiki-content {
+        padding: 1.5rem;
+    }
+    
+    .wiki-title {
+        margin-top: 0;
+        margin-bottom: 0.5rem;
+    }
+    
+    .wiki-title a {
+        color: var(--text-color);
+        text-decoration: none;
+    }
+    
+    .wiki-title a:hover {
+        color: var(--primary);
+    }
+    
+    .wiki-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 1rem;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
     }
 </style>
 
