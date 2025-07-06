@@ -180,36 +180,6 @@
         </form>
     </div>
     
-    % if page and history:  
-    <div class="card mt-lg">
-        <h2 class="section-title">Page History</h2>
-        
-        % if history:
-            <ul class="activity-list">
-                % for edit in history:
-                <li class="activity-item">
-                    <div class="activity-icon">
-                        <i class="fas fa-history"></i>
-                    </div>
-                    <div class="activity-content">
-                        <div class="activity-title">
-                            {{edit.username}} 
-                            % if edit.comment:
-                                - {{edit.comment}}
-                            % end
-                        </div>
-                        <div class="activity-time">
-                            {{edit.updated_at}}
-                        </div>
-                    </div>
-                </li>
-                % end
-            </ul>
-        % end
-    </div>
-    % end
-</div>
-
 <script>
 document.getElementById('title').addEventListener('blur', function() {
     const slugField = document.getElementById('slug');

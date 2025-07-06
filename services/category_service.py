@@ -45,13 +45,14 @@ class CategoryService:
             cursor = conn.cursor()
             cursor.execute(
                 """
-        SELECT c.*, COUNT(w.id) AS wiki_count 
-        FROM categories c
-        LEFT JOIN wikis w ON w.category_id = c.id
-        GROUP BY c.id
-        ORDER BY c.name
-    """
+            SELECT c.*, COUNT(w.id) AS wiki_count 
+            FROM categories c
+            LEFT JOIN wikis w ON w.category_id = c.id
+            GROUP BY c.id
+            ORDER BY c.name
+            """
             )
+            rows = cursor.fetchall()
 
         return [
             Category(
@@ -63,7 +64,7 @@ class CategoryService:
                 icon=row[5],
                 wiki_count=row[6],
             )
-            for row in cursor.fetchall()
+            for row in rows
         ]
 
     def update_category(self, category_id, name, slug, description, color, icon):

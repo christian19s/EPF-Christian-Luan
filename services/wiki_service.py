@@ -245,34 +245,47 @@ class WikiService:
 
 
     def update_page(self, page, editor, comment="Updated"):
-        """Update page content with history tracking and permission check"""
-        if not isinstance(editor, AuthUser):
-            editor = self.user_service.get_user_by_id(editor)
-            
+     """Update page content with history tracking and permission check"""
+     if not isinstance(editor, AuthUser):
+         editor = self.user_service.get_user_by_id(editor)
+        
+     if not PermissionSystem.can(editor, PermissionSystem.EDIT_PAGE, page.wiki_id):
+         raise UnauthorizedAccess("Insufficient permissions to edit page")
+    
+     from datetime import datetime
+     updated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+     with closing(get_db_connection()) as conn:
+         cursor = conn.cursor()
+         # Update page
+         cursor.execute(
+            """UPDATE pages SET 
+            title = ?, content = ?, updated_at = ?
+            WHERE id = ?""",
+            (page.title, page.content, updated_at, page.id)
+        )
+        # Add to page history - FIXED: Added title field
+         cursor.execute(
+            """INSERT INTO page_history 
+            (page_id, title, content, updated_by, updated_at, comment) 
+            VALUES (?, ?, ?, ?, ?, ?)""",
+            (page.id, page.title, page.content, editor.id, updated_at, comment)
+        )
+         conn.commit()
+        
+     return self.get_page_by_id(page.id)
+    
+    from collections import namedtuple
+    
+    class HistoryRecord:
+     def __init__(self, id, title, content, updated_at, username, comment):
+        self.id = id
+        self.title = title
+        self.content = content
+        self.updated_at = updated_at
+        self.username = username
+        self.comment = comment
 
-        if not PermissionSystem.can(editor, PermissionSystem.EDIT_PAGE, page.wiki_id):
-            raise UnauthorizedAccess("Insufficient permissions to edit page")
 
-        updated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        with closing(get_db_connection()) as conn:
-            cursor = conn.cursor()
-            # pag update
-            cursor.execute(
-                """UPDATE pages SET 
-                title = ?, content = ?, updated_at = ?
-                WHERE id = ?""",
-                (page.title, page.content, updated_at, page.id)
-            )
-            #historico da pag
-            cursor.execute(
-                """INSERT INTO page_history 
-                (page_id, content, updated_by, updated_at, comment) 
-                VALUES (?, ?, ?, ?, ?)""",
-                (page.id, page.content, editor.id, updated_at, comment)
-            )
-            conn.commit()
-            
-        return self.get_page_by_id(page.id)
 
     def delete_page(self, page_id, deleter):
         """Delete a page with permission check"""
@@ -294,27 +307,27 @@ class WikiService:
         return True
 
     def get_page_history(self, page_id):
-        with closing(get_db_connection()) as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                """SELECT ph.id, ph.content, ph.updated_at, u.username, ph.comment 
-                FROM page_history ph
-                JOIN users u ON ph.updated_by = u.id
-                WHERE page_id = ?
-                ORDER BY ph.updated_at DESC""",
-                (page_id,)
-            )
-            return [
-                {
-                    "id": row[0],
-                    "content": row[1],
-                    "updated_at": row[2],
-                    "username": row[3],
-                    "comment": row[4]
-                }
-                for row in cursor.fetchall()
-            ]
-
+     with closing(get_db_connection()) as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            """SELECT ph.id, ph.title, ph.content, ph.updated_at, u.username, ph.comment 
+            FROM page_history ph
+            JOIN users u ON ph.updated_by = u.id
+            WHERE page_id = ?
+            ORDER BY ph.updated_at DESC""",
+            (page_id,)
+        )
+        return [
+            {
+                "id": row[0],
+                "title": row[1],  # Added title field
+                "content": row[2],
+                "updated_at": row[3],
+                "username": row[4],
+                "comment": row[5]
+            }
+            for row in cursor.fetchall()
+        ]
     def get_wiki_pages(self, wiki_id):
      with closing(get_db_connection()) as conn:
         conn.row_factory = sqlite3.Row  # Enable row factory

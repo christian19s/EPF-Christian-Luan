@@ -575,81 +575,100 @@ class WikiController:
             return self.render_error(f"Error loading page: {str(e)}")
 
     def edit_page(self, wiki_slug, page_slug):
-        user = self.get_current_user()
-        if not user:
-            return redirect("/login")
+     user = self.get_current_user()
+     if not user:
+         return redirect("/login")
 
-        try:
-            wiki = self.wiki_service.get_wiki_by_slug(wiki_slug)
-            page = self.wiki_service.get_page_by_slug(wiki.id, page_slug)
+     try:
+         wiki = self.wiki_service.get_wiki_by_slug(wiki_slug)
+         page = self.wiki_service.get_page_by_slug(wiki.id, page_slug)
 
-            # Checa perms
-            if not PermissionSystem.can(user, PermissionSystem.EDIT_PAGE, wiki.id):
-                return self.render_error("Usuario não tem permissão para editar!", 403)
+        # Checa perms
+         if not PermissionSystem.can(user, PermissionSystem.EDIT_PAGE, wiki.id):
+             return self.render_error("Usuario não tem permissão para editar!", 403)
 
-            if request.method == "GET":
-                # pega media da sidebar
+        # Fetch page history
+         history = self.wiki_service.get_page_history(page.id)
+
+         if request.method == "GET":
+            # FIXED: Added proper error handling for media retrieval
+             try:
+                 media = self.wiki_service.get_page_media(page.id)
+             except Exception as e:
+                print(f"Error getting page media: {str(e)}")
+                media = []  # Default to empty list
+
+             return self.render_template(
+                "page_form.tpl",
+                page=page,
+                wiki=wiki,
+                media=media,
+                history=history,  # Pass history to template
+                action_url=f"/wikis/{wiki_slug}/{page_slug}/edit",
+                cancel_url=f"/wikis/{wiki_slug}/{page_slug}",
+            )
+
+         title = request.forms.get("title", "").strip()
+         slug = request.forms.get("slug", "").strip()
+         content = request.forms.get("content", "")
+         comment = request.forms.get("comment", "Updated content")
+
+         errors = []
+         if not title:
+             errors.append("Titulo é necessario!")
+         if not slug:
+            errors.append("URL da slug é necessario")
+         if not re.match(r"^[a-z0-9\-]+$", slug):
+            errors.append("Slugs podem apenas ter letras, numeros e hifens!")
+
+         if errors:
+            # FIXED: Added proper error handling for media retrieval
+            try:
                 media = self.wiki_service.get_page_media(page.id)
+            except Exception as e:
+                print(f"Error getting page media: {str(e)}")
+                media = []  # Default to empty list
 
-                return self.render_template(
-                    "page_form.tpl",
-                    page=page,
-                    wiki=wiki,
-                    media=media,
-                    action_url=f"/wikis/{wiki_slug}/{page_slug}/edit",
-                    cancel_url=f"/wikis/{wiki_slug}/{page_slug}",
+            return self.render_template(
+                "page_form.tpl",
+                page=page,
+                wiki=wiki,
+                media=media,
+                history=history,  # Pass history to template
+                errors=errors,
+                action_url=f"/wikis/{wiki_slug}/{page_slug}/edit",
+                cancel_url=f"/wikis/{wiki_slug}/{page_slug}",
+            )
+
+        # uptd page
+         page.title = title
+         page.content = content
+         self.wiki_service.update_page(page, user, comment)
+
+        # update slug se ela mudar
+         if page.slug != slug:
+            page.slug = slug
+            with closing(get_db_connection()) as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "UPDATE pages SET slug = ? WHERE id = ?", (slug, page.id)
                 )
+                conn.commit()
 
-            title = request.forms.get("title", "").strip()
-            slug = request.forms.get("slug", "").strip()
-            content = request.forms.get("content", "")
-            comment = request.forms.get("comment", "Updated content")
+        # Use proper redirect without raising exception
+         response.status = 303
+         response.set_header('Location', f"/wikis/{wiki.slug}/{slug}")
+         return
 
-            errors = []
-            if not title:
-                errors.append("Titulo é necessario!")
-            if not slug:
-                errors.append("URL da slug é necessario")
-            if not re.match(r"^[a-z0-9\-]+$", slug):
-                errors.append("Slugs podem apenas ter letras, numeros e hifens!")
+     except (WikiNotFound, PageNotFound):
+         return self.render_error("Page not found", 404)
+     except UnauthorizedAccess as e:
+        return self.render_error(str(e), 403)
+     except Exception as e:
+         traceback.print_exc()
+         return self.render_error(f"Error updating page: {str(e)}")
 
-            if errors:
-                # pega media sidebar de novo
-                media = self.wiki_service.get_page_media(page.id)
 
-                return self.render_template(
-                    "page_form.tpl",
-                    page=page,
-                    wiki=wiki,
-                    media=media,
-                    errors=errors,
-                    action_url=f"/wikis/{wiki_slug}/{page_slug}/edit",
-                    cancel_url=f"/wikis/{wiki_slug}/{page_slug}",
-                )
-
-            # uptd page
-            page.title = title
-            page.content = content
-            self.wiki_service.update_page(page, user, comment)
-
-            # update slug se ela mudar
-            if page.slug != slug:
-                page.slug = slug
-                with closing(get_db_connection()) as conn:
-                    cursor = conn.cursor()
-                    cursor.execute(
-                        "UPDATE pages SET slug = ? WHERE id = ?", (slug, page.id)
-                    )
-                    conn.commit()
-
-            return redirect(f"/wikis/{wiki.slug}/{slug}")
-
-        except (WikiNotFound, PageNotFound):
-            return self.render_error("Page not found", 404)
-        except UnauthorizedAccess as e:
-            return self.render_error(str(e), 403)
-        except Exception as e:
-            return self.render_error(f"Error updating page: {str(e)}")
 
     def delete_page(self, wiki_slug, page_slug):
         user = self.get_current_user()
