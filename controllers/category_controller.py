@@ -3,11 +3,11 @@ import sqlite3
 
 from bottle import (Bottle, HTTPResponse, SimpleTemplate, redirect, request,
                     response, template)
+
 from config import SECRET_KEY, TEMPLATE_DIR
 from data import get_db_connection
 from models.category import Category
 from models.permSystem import PermissionSystem
-
 from services.category_service import CategoryService
 from services.user_service import UserService
 
@@ -192,8 +192,7 @@ class CategoryController:
                 errors.append("URL slug is required")
 
             if errors:
-                # Create temporary category object with form data
-                 category_dict = {
+                 form_data = {
                  'id': category.id,
                  'name': category.name,
                   'slug': category.slug,
@@ -201,7 +200,7 @@ class CategoryController:
                  'color': category.color,
                  'icon': category.icon
                  }
-                 return self.render_template("category_form.tpl", category=category_dict)
+                 return self.render_template("category_form.tpl", category=form_data)
             self.category_service.update_category(
                 category_id, name, slug, description, color, icon
             )

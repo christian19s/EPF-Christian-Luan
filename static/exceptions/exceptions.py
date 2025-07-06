@@ -304,3 +304,160 @@ class WikiContentError(Exception):
         if details:
             return f"{self.message} ({'; '.join(details)})"
         return self.message
+
+class InvalidOperation(Exception):
+    """Raised when an invalid operation is attempted"""
+    
+    def __init__(self, message="Invalid operation", operation=None, reason=None):
+        self.message = message
+        self.operation = operation
+        self.reason = reason
+        super().__init__(message)
+
+    def __str__(self):
+        details = []
+        if self.operation:
+            details.append(f"operation: {self.operation}")
+        if self.reason:
+            details.append(f"reason: {self.reason}")
+            
+        if details:
+            return f"{self.message} ({', '.join(details)})"
+        return self.message
+
+
+class RateLimitExceeded(Exception):
+    """Raised when API rate limits are exceeded"""
+    
+    def __init__(self, message="Rate limit exceeded", limit=None, reset_time=None):
+        self.message = message
+        self.limit = limit
+        self.reset_time = reset_time
+        super().__init__(message)
+
+    def __str__(self):
+        details = []
+        if self.limit:
+            details.append(f"limit: {self.limit}")
+        if self.reset_time:
+            details.append(f"resets at: {self.reset_time}")
+            
+        if details:
+            return f"{self.message} ({', '.join(details)})"
+        return self.message
+
+
+class ConfigurationError(Exception):
+    """Raised when there's a configuration problem"""
+    
+    def __init__(self, message="Configuration error", key=None, value=None):
+        self.message = message
+        self.key = key
+        self.value = value
+        super().__init__(message)
+
+    def __str__(self):
+        if self.key:
+            return f"{self.message} (key: '{self.key}', value: '{self.value}')"
+        return self.message
+
+
+class DependencyError(Exception):
+    """Raised when a required dependency fails"""
+    
+    def __init__(self, message="Dependency error", service=None, status=None):
+        self.message = message
+        self.service = service
+        self.status = status
+        super().__init__(message)
+
+    def __str__(self):
+        details = []
+        if self.service:
+            details.append(f"service: {self.service}")
+        if self.status:
+            details.append(f"status: {self.status}")
+            
+        if details:
+            return f"{self.message} ({', '.join(details)})"
+        return self.message
+
+
+class ValidationError(Exception):
+    """Raised when data validation fails"""
+    
+    def __init__(self, message="Validation failed", field=None, value=None, rule=None):
+        self.message = message
+        self.field = field
+        self.value = value
+        self.rule = rule
+        super().__init__(message)
+
+    def __str__(self):
+        details = []
+        if self.field:
+            details.append(f"field: {self.field}")
+        if self.value:
+            details.append(f"value: {self.value}")
+        if self.rule:
+            details.append(f"rule: {self.rule}")
+            
+        if details:
+            return f"{self.message} ({', '.join(details)})"
+        return self.message
+
+
+class ConcurrentModificationError(Exception):
+    """Raised when a resource is modified by another process"""
+    
+    def __init__(self, message="Resource was modified by another process", resource=None):
+        self.message = message
+        self.resource = resource
+        super().__init__(message)
+
+    def __str__(self):
+        if self.resource:
+            return f"{self.message} (resource: {self.resource})"
+        return self.message
+
+
+class ServiceUnavailable(Exception):
+    """Raised when a required service is unavailable"""
+    
+    def __init__(self, message="Service unavailable", service=None, retry_after=None):
+        self.message = message
+        self.service = service
+        self.retry_after = retry_after
+        super().__init__(message)
+
+    def __str__(self):
+        details = []
+        if self.service:
+            details.append(f"service: {self.service}")
+        if self.retry_after:
+            details.append(f"retry after: {self.retry_after}")
+            
+        if details:
+            return f"{self.message} ({', '.join(details)})"
+        return self.message
+
+
+class InsufficientStorage(Exception):
+    """Raised when storage space is insufficient"""
+    
+    def __init__(self, message="Insufficient storage space", required=None, available=None):
+        self.message = message
+        self.required = required
+        self.available = available
+        super().__init__(message)
+
+    def __str__(self):
+        details = []
+        if self.required:
+            details.append(f"required: {self.required}")
+        if self.available:
+            details.append(f"available: {self.available}")
+            
+        if details:
+            return f"{self.message} ({', '.join(details)})"
+        return self.message

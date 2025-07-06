@@ -5,6 +5,7 @@ from controllers.category_controller import category_routes
 
 # from controllers.activity_controller import activity_routes NAO COMMITA SEUS TESTES!!!
 from controllers.home_controller import home_routes
+from controllers.media_controllers import media_routes
 from controllers.user_controller import user_routes
 from controllers.wiki_controller import wiki_routes
 
@@ -16,6 +17,7 @@ def init_controllers(app: Bottle):
     app.merge(activity_routes)
     app.merge(wiki_routes)
     app.merge(category_routes)
+    app.merge(media_routes)
 
 
 #    app.merge(activity_routes)

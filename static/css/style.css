@@ -1,3 +1,38 @@
+:root {
+    /* Light theme */
+    --surface-1: #fbf1c7;
+    --surface-2: #f2e5bc;
+    --surface-3: #ebdbb2;
+    --surface-4: #d5c4a1;
+    --text-primary: #3c3836;
+    --text-secondary: #665c54;
+    --text-on-primary: #fbf1c7;
+    --border-color: #bdae93;
+    --accent: #458588;
+    --link: #076678;
+    --primary: #98971a;
+    --primary-hover: #79740e;
+    --error: #cc241d;
+}
+
+.dark-mode {
+    /* Dark theme */
+    --surface-1: #1e1e2e;
+    --surface-2: #181825;
+    --surface-3: #313244;
+    --surface-4: #45475a;
+    --text-primary: #cdd6f4;
+    --text-secondary: #a6adc8;
+    --text-on-primary: #1e1e2e;
+    --border-color: #45475a;
+    --accent: #89b4fa;
+    --link: #89b4fa;
+    --primary: #a6e3a1;
+    --primary-hover: #94d68c;
+    --error: #f38ba8;
+}
+
+
 /* Login Page Styles */
 
 .form-group {

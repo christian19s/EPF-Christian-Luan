@@ -54,5 +54,4 @@ class Category:
         return f"Category(id={self.id}, name='{self.name}', slug='{self.slug}')"
 
     def __str__(self) -> str:
-        """User-friendly string representation"""
-        return f"{self.name} ({self.wiki_count()} wikis)"
+        return f"{self.name} ({self.wiki_count} wikis)"

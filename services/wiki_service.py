@@ -1,13 +1,13 @@
 import datetime
 import os
 import sqlite3
-import time
 import uuid
 from contextlib import closing
-from unicodedata import category
+
+from bottle import HTTPResponse
+from markdown import markdown
 
 from data import get_db_connection, get_wiki_upload_path
-from markdown import markdown
 from models.permSystem import PermissionSystem
 from models.user import AuthUser
 from models.wiki import MediaItem, WikiInstance, WikiPage, WikiSystem
@@ -150,30 +150,44 @@ class WikiService:
 
     # Page Operations =========================================================
     def create_page(self, wiki_id, title, content, user, slug):
-        """Create new page with debug logging"""
-        print(f"DEBUG: create_page(wiki_id={wiki_id}, title='{title}', slug='{slug}')")
-        import datetime
-        created_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        import traceback
+        try:
+         """Create new page with debug logging"""
+         print(f"DEBUG: create_page(wiki_id={wiki_id}, title='{title}', slug='{slug}')")
+         import datetime
+         created_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
-        with closing(get_db_connection()) as conn:
-            cursor = conn.cursor()
-            query = """
+         with closing(get_db_connection()) as conn:
+             cursor = conn.cursor()
+             query = """
                 INSERT INTO pages 
                 (title, content, wiki_id, created_by, slug, created_at, updated_at) 
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             """
-            params = (title, content, wiki_id, user.id, slug, created_at, created_at)
-            print(f"DEBUG: SQL Query: {query}")
-            print(f"DEBUG: Params: {params}")
+             params = (title, content, wiki_id, user.id, slug, created_at, created_at)
+             print(f"DEBUG: SQL Query: {query}")
+             print(f"DEBUG: Params: {params}")
             
-            cursor.execute(query, params)
-            page_id = cursor.lastrowid
-            conn.commit()
+             cursor.execute(query, params)
+             page_id = cursor.lastrowid
+             conn.commit()
             
-            print(f"DEBUG: Page inserted - ID: {page_id}")
+             print(f"DEBUG: Page inserted - ID: {page_id}")
             
-            # Return page object
-            return WikiPage(
+        except (WikiNotFound, UnauthorizedAccess) as e:
+         print(f"DEBUG ERROR: {type(e).__name__}: {str(e)}")
+         status = 404 if isinstance(e, WikiNotFound) else 403
+         return print(f"{e} status")
+        except HTTPResponse as e:
+            # Allow redirects to propagate normally
+            raise e
+        except Exception as e:
+            print(f"DEBUG ERROR: {str(e)}")
+            traceback.print_exc()
+            return print(f"Error creating page: {str(e)}")  
+
+
+        return WikiPage(
                 id=page_id,
                 title=title,
                 content=content,
@@ -183,6 +197,7 @@ class WikiService:
                 updated_at=created_at,
                 slug=slug
             )        
+        
     def get_page_by_slug(self, wiki_id, page_slug):
         """Get page by slug - DEBUGGED VERSION"""
         print(f"DEBUG: get_page_by_slug(wiki_id={wiki_id}, page_slug='{page_slug}')")

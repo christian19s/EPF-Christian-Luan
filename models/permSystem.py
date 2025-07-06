@@ -125,25 +125,6 @@ class PermissionSystem:
         ]
 
     @staticmethod
-    def get_role_for_context(user, wiki_id=None):
-        """Determine user's role in a specific context"""
-        # superadmin tem a admin em todas
-        if PermissionSystem.has_permission(
-            user.permissions, PermissionSystem.ADMINISTER
-        ):
-            return "superadmin"
-        # dono de uma wiki e admin
-        if wiki_id and hasattr(user, "owned_wikis"):
-            if any(wiki.id == wiki_id for wiki in user.owned_wikis):
-                return "admin"
-
-        if wiki_id and hasattr(user, "wiki_roles"):
-            if wiki_id in user.wiki_roles:
-                return user.wiki_roles[wiki_id]
-        # se usuario
-        return getattr(user, "role", "viewer")
-
-    @staticmethod
     def can(user, permission, wiki_id=None):
         """Check user permission in the context of a wiki"""
         if user is None:

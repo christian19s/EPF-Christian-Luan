@@ -83,7 +83,7 @@ CREATE TABLE IF NOT EXISTS media (
     file_path TEXT NOT NULL,
     alt_text TEXT,
     description TEXT,
-    is_global BOOLEAN DEFAULT 0  -- For site-wide media
+    is_global BOOLEAN DEFAULT 0 
 );
 
 -- Page-media relationships
@@ -136,6 +136,8 @@ CREATE INDEX IF NOT EXISTS idx_wikis_category ON wikis(category_id);
 CREATE INDEX IF NOT EXISTS idx_wikis_private ON wikis(is_private) WHERE is_private = 1;
 
 -- Page indexes
+CREATE UNIQUE INDEX IF NOT EXISTS idx_page_slugs
+ON pages (wiki_id, slug);
 CREATE INDEX IF NOT EXISTS idx_pages_wiki_slug ON pages(wiki_id, slug);
 CREATE INDEX IF NOT EXISTS idx_pages_created_by ON pages(created_by);
 CREATE INDEX IF NOT EXISTS idx_pages_parent ON pages(parent_id) WHERE parent_id IS NOT NULL;
@@ -145,6 +147,7 @@ CREATE INDEX IF NOT EXISTS idx_pages_pinned ON pages(is_pinned) WHERE is_pinned 
 CREATE INDEX IF NOT EXISTS idx_media_wiki ON media(wiki_id);
 CREATE INDEX IF NOT EXISTS idx_media_filename ON media(uuid_filename);
 CREATE INDEX IF NOT EXISTS idx_media_global ON media(is_global) WHERE is_global = 1;
+CREATE INDEX IF NOT EXISTS idx_media_original_name ON media(original_filename);
 
 -- History indexes
 CREATE INDEX IF NOT EXISTS idx_page_history_page ON page_history(page_id);
