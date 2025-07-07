@@ -7,6 +7,30 @@
 <script src="/static/js/dark-mode.js"></script>
 
 <style>
+  .wiki-form-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    background: var(--surface-1);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    border: 1px solid var(--border-color);
+  }
+
+  .form-header {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .form-header h1 {
+    font-size: 1.8rem;
+    font-weight: 500;
+    margin: 0;
+    color: var(--text-primary);
+  }
+
   .editor-container {
     border: 1px solid var(--border-color);
     border-radius: 6px;
@@ -16,16 +40,17 @@
   
   .media-upload-section {
     background: var(--surface-2);
-    padding: 1rem;
+    padding: 1.5rem;
     border-radius: 6px;
-    margin-top: 1.5rem;
+    margin-top: 2rem;
+    border: 1px solid var(--border-color);
   }
   
   .media-preview {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     gap: 1rem;
-    margin-top: 1rem;
+    margin-top: 1.5rem;
   }
   
   .media-preview-item {
@@ -33,6 +58,12 @@
     border-radius: 4px;
     overflow: hidden;
     background: var(--surface-3);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+  }
+  
+  .media-preview-item:hover {
+    transform: translateY(-3px);
   }
   
   .media-preview-item img {
@@ -60,34 +91,122 @@
   
   .editor-toolbar {
     background: var(--surface-2);
-    padding: 0.5rem;
+    padding: 0.75rem;
     border-bottom: 1px solid var(--border-color);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
   }
   
   .editor-toolbar button {
     background: var(--surface-3);
-    border: none;
+    border: 1px solid var(--border-color);
     border-radius: 4px;
-    padding: 0.25rem 0.5rem;
-    margin-right: 0.25rem;
+    padding: 0.4rem 0.8rem;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+  }
+
+  .editor-toolbar button:hover {
+    background: var(--surface-4);
+  }
+
+  .form-control {
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 0.75rem;
+    background: var(--surface-1);
+    color: var(--text-primary);
+  }
+
+  .form-control:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+  }
+
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    border-top: 1px solid var(--border-color);
+    padding-top: 1.5rem;
+  }
+
+  .btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+  }
+
+  .btn-primary {
+    background: var(--primary);
+    color: var(--text-on-primary);
+  }
+
+  .btn-primary:hover {
+    background: var(--primary-hover);
+  }
+
+  .btn-secondary {
+    background: var(--surface-3);
+    color: var(--text-primary);
+  }
+
+  .btn-secondary:hover {
+    background: var(--surface-4);
+  }
+
+  .breadcrumb {
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+  }
+
+  .breadcrumb a {
+    color: var(--link);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    text-decoration: underline;
   }
 </style>
 
 <div class="container">
-    <nav class="breadcrumb mb-md">
+    <nav class="breadcrumb">
         <a href="/wikis">Wikis</a> &raquo;
         <a href="/wikis/{{wiki.slug}}">{{wiki.name}}</a> &raquo;
         <span>{{page.title if page else "Create Page"}}</span>
     </nav>
     
-    <div class="page-header">
-        <div class="flex justify-between items-center">
-            <h1 class="page-title">{{page.title if page else "Create New Page"}}</h1>
+    <div class="wiki-form-container">
+        <div class="form-header">
+            <h1>{{page.title if page else "Create New Page"}}</h1>
         </div>
-    </div>
-    
-    <div class="content-body">
+        
         <form method="POST" action="{{action_url}}" enctype="multipart/form-data" id="page-form">
             <div class="form-group">
                 <label for="title">Page Title</label>
@@ -108,13 +227,13 @@
                 <label for="content">Content (Markdown)</label>
                 <div class="editor-container">
                     <div class="editor-toolbar">
-                        <button type="button" data-command="bold"><strong>B</strong></button>
-                        <button type="button" data-command="italic"><em>I</em></button>
-                        <button type="button" data-command="heading">H</button>
-                        <button type="button" data-command="link">🔗</button>
-                        <button type="button" data-command="image">🖼️</button>
-                        <button type="button" data-command="code">&lt;&gt;</button>
-                        <button type="button" data-command="unordered-list">• List</button>
+                        <button type="button" data-command="bold"><i class="fas fa-bold"></i></button>
+                        <button type="button" data-command="italic"><i class="fas fa-italic"></i></button>
+                        <button type="button" data-command="heading"><i class="fas fa-heading"></i></button>
+                        <button type="button" data-command="link"><i class="fas fa-link"></i></button>
+                        <button type="button" data-command="image"><i class="fas fa-image"></i></button>
+                        <button type="button" data-command="code"><i class="fas fa-code"></i></button>
+                        <button type="button" data-command="unordered-list"><i class="fas fa-list-ul"></i></button>
                     </div>
                     <textarea class="form-control" id="content" name="content" 
                               rows="15" required>{{page.content if page else ''}}</textarea>
@@ -122,9 +241,10 @@
             </div>
             
             <div class="media-upload-section">
-                <h4>Attach Media</h4>
-                <div class="flex items-center">
-                    <input type="file" id="media-file" name="media" accept="image/*,video/*,application/pdf">
+                <h3><i class="fas fa-paperclip"></i> Attach Media</h3>
+                <div class="flex items-center mt-3">
+                    <input type="file" id="media-file" name="media" accept="image/*,video/*,application/pdf"
+                           class="form-control py-2">
                     <button type="button" class="btn btn-secondary ml-2"
                             hx-post="/wikis/{{wiki.slug}}/upload-media"
                             hx-include="#media-file"
@@ -141,9 +261,9 @@
                         % if item.mime_type.startswith('image'):
                         <img src="/media/{{item.wiki_id}}/{{item.uuid_filename}}" alt="{{item.original_filename}}">
                         % else:
-                        <div class="bg-gray-200 p-2 text-center">
-                            <i class="fas fa-file text-2xl"></i>
-                            <p class="truncate text-xs">{{item.original_filename}}</p>
+                        <div class="bg-gray-200 p-2 text-center h-full flex flex-col items-center justify-center">
+                            <i class="fas fa-file text-2xl mb-1"></i>
+                            <p class="truncate text-xs px-1">{{item.original_filename}}</p>
                         </div>
                         % end
                         <input type="hidden" name="attached_media[]" value="{{item.id}}">
@@ -167,7 +287,7 @@
             </div>
             % end
             
-            <div class="form-actions mt-4">
+            <div class="form-actions">
                 <button type="submit" class="btn btn-primary">
                     % if page:
                     <i class="fas fa-save"></i> Save Changes
@@ -175,7 +295,9 @@
                     <i class="fas fa-plus"></i> Create Page
                     % end
                 </button>
-                <a href="{{cancel_url}}" class="btn btn-secondary">Cancel</a>
+                <a href="{{cancel_url}}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
             </div>
         </form>
     </div>
@@ -241,4 +363,4 @@ document.querySelectorAll('.editor-toolbar button').forEach(button => {
         textarea.setSelectionRange(start, start + newText.length);
     });
 });
-</script>/script>
+</script>
