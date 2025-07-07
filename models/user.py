@@ -103,7 +103,7 @@ class AuthUser:
     def get_profile_picture_url(self):
         if self.profile_picture:
             return f"/uploads/users/{self.profile_picture}"
-        return "/static/images/default-profile.png"
+        return "/static/img/default-profile.png"
 
     def update_profile_picture(self, new_picture_path):
         if not new_picture_path:
