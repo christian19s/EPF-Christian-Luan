@@ -3,7 +3,7 @@ from pathlib import Path
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-SECRET_KEY = SECRET_KEY = os.environ.get("SECRET_KEY.txt")
+SECRET_KEY = os.environ.get("SECRET_KEY.txt")
 TEMPLATE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "views")
 
 

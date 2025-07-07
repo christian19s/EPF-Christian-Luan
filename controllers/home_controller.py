@@ -22,6 +22,7 @@ class HomeController(BaseController):
         return self.render("home_form", action="/home/create")
 
     def show_home(self):
+        from config import SECRET_KEY
         """Handle the home page request"""
         try:
             user = self.base_controller.get_current_user()

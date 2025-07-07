@@ -1,12 +1,15 @@
 from bottle import response, request, static_file
 
 from data import USER_UPLOADS
+from services.user_service import UserService
 
 
 class BaseController:
     def __init__(self, app):
         self.app = app
         self._setup_base_routes()
+        self.user_service = UserService()
+
 
     def _setup_base_routes(self):
         """Configura rotas básicas comuns a todos os controllers"""
@@ -60,6 +63,7 @@ class BaseController:
 
     def get_current_user(self):
         """Get authenticated user from session"""
+        from config import SECRET_KEY
         user_id = request.get_cookie("user_id", secret=SECRET_KEY)
         if user_id:
             return UserService.get_user_by_id(int(user_id))
