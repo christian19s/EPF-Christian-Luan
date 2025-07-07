@@ -45,15 +45,15 @@ WikiTree
 ├── data
 │   ├── db
 │   └── uploads
-│       ├── users
-│       └── wiki
+│       ├── users # uploads relativos a usuario
+│       └── wiki # uploads relativos a wikis 
 ├── models
 ├── services
 ├── static
 │   ├── css
 │   ├── exceptions
 │   ├── img
-│   └── js
+│   └── js # scripts relativos
 └── views
 ```
 
@@ -128,4 +128,4 @@ python main.py
 
 ## 🧠 Autor e Licença
 Projeto desenvolvido como template didático para disciplinas de Programação Orientada a Objetos, baseado no [BMVC](https://github.com/hgmachine/bmvc_start_from_this).
-Você pode reutilizar, modificar e compartilhar livremente.
+Você pode reutilizar, modificar e compartilhar livremente. sob a licensa GPL  2.0
