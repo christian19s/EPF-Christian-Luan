@@ -4,10 +4,36 @@ WikiTree é um projeto de template educacional voltado para o ensino de **Progra
 
 Utiliza o microframework **Bottle**. Ideal para uso em disciplinas introdutórias de Engenharia de Software ou Ciência da Computação.
 
-Utiliza de bibliotecas extras como:
-## 💡 Objetivo
+Utiliza de bibliotecas extras como: hashlib, [Tost ui](https://ui.toast.com/tui-editor), Markdown render
+## 🎯 Objetivo do Projeto
 
-Criar e implementar um sistema de wikis organizadas por categoria (jogos,filmes,livros, etc)
+### 📌 Funcionalidades Principais:
+- **Sistema de Wikis Organizadas por Categoria**  
+  - Implementar categorias como jogos, filmes, livros, etc.  
+  - Permitir navegação e filtragem por categoria.  
+
+- **Persistência em Banco de Dados SQL**  
+  - Armazenar wikis, páginas, usuários e categorias em um banco relacional (SQLite/PostgreSQL).  
+  - Garantir integridade dos dados com relações adequadas (chaves estrangeiras).  
+
+- **Sistema de Permissões Robustas**  
+  - Definir níveis de acesso (ex: `viewer`, `editor`, `admin`, `superadmin`).  
+  - Restringir edição/exclusão com base em:  
+    - **Papel global do usuário** (ex: `superadmin` pode editar todas as wikis).  
+    - **Papel em wikis específicas** (ex: `moderator` só na wiki X).  
+  - Implementar verificações de permissão em todas as operações críticas.  
+
+### 🔧 Requisitos Técnicos:
+- **Backend**:  
+  - Classes Python para modelos (`Wiki`, `Category`, `User`, `PermissionSystem`).  
+  - Operações CRUD com SQL (via `sqlite3`)
+
+- **Segurança**:  
+  - Hash de senhas com `bcrypt`.  
+  - Middleware para validar permissões antes de cada ação.  
+
+- **Extensibilidade**:  
+  - Design modular para adicionar novas categorias/permissões futuramente.  
 
 ---
 
@@ -97,7 +123,8 @@ python main.py
 
 4. Accese sua aplicação no navegador em: [http://localhost:8080](http://localhost:8080)
 
----
+## diagrama de classes UML ![diagrama_de_classesUML](https://github.com/user-attachments/assets/3947d5f0-3b85-437c-8bbe-62f5828d4559)
+
 
 ## 🧠 Autor e Licença
 Projeto desenvolvido como template didático para disciplinas de Programação Orientada a Objetos, baseado no [BMVC](https://github.com/hgmachine/bmvc_start_from_this).
