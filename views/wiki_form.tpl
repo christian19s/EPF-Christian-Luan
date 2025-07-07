@@ -1,16 +1,16 @@
-% rebase('layout', title=('Edit Wiki' if wiki else 'Create New Wiki'))
+% rebase('layout', title=('Editar Wiki' if wiki else 'Criar Wiki'))
 <link rel="stylesheet" href="/static/css/style.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <div class="wiki-form-container">
     <div class="wiki-form-header">
-        <h1><i class="fas fa-book"></i> {{ 'Edit Wiki' if wiki else 'Create New Wiki' }}</h1>
+        <h1><i class="fas fa-book"></i> {{ 'Editar Wiki' if wiki else 'Criar Wiki' }}</h1>
         <div class="form-actions">
             <a href="{{ cancel_url }}" class="btn btn-secondary">
-                <i class="fas fa-times"></i> Cancel
+                <i class="fas fa-times"></i> Cancelar
             </a>
             <button type="submit" form="wiki-form" class="btn btn-primary">
-                <i class="fas fa-save"></i> {{ 'Update' if wiki else 'Create' }}
+                <i class="fas fa-save"></i> {{ 'Atualizar' if wiki else 'Criar' }}
             </button>
         </div>
     </div>
@@ -28,10 +28,10 @@
 
     <form id="wiki-form" method="POST" action="{{ action_url }}">
         <div class="form-section">
-            <h2><i class="fas fa-info-circle"></i> Basic Information</h2>
+            <h2><i class="fas fa-info-circle"></i> Informações Básicas</h2>
             
             <div class="form-group">
-                <label for="name">Wiki Name</label>
+                <label for="name">Nome da Wiki</label>
                 <input type="text" id="name" name="name" 
                        value="{{ wiki.name if wiki else '' }}" 
                        placeholder="Enter wiki name" required>
@@ -45,23 +45,23 @@
                            value="{{ wiki.slug if wiki else '' }}" 
                            placeholder="wiki-slug" required>
                 </div>
-                <small>Lowercase letters, numbers, and hyphens only</small>
+                <small>Letras em caixa baixa, números e hífens somente</small>
             </div>
 
             <div class="form-group">
-                <label for="description">Description</label>
+                <label for="description">Descrição</label>
                 <textarea id="description" name="description" rows="3" 
-                          placeholder="Brief description of this wiki">{{ wiki.description if wiki else '' }}</textarea>
+                          placeholder="Descrição resumida desta wiki">{{ wiki.description if wiki else '' }}</textarea>
             </div>
         </div>
         
         <div class="form-section">
-            <h2><i class="fas fa-folder-tree"></i> Organization</h2>
+            <h2><i class="fas fa-folder-tree"></i> Organização</h2>
             
             <div class="form-group">
-                <label for="category_id">Category</label>
+                <label for="category_id">Categoria</label>
                 <select id="category_id" name="category_id">
-                    <option value="">-- No Category --</option>
+                    <option value="">-- Sem Categoria --</option>
                     % for category in categories:
                         <option value="{{category['id']}}" 
                             {{ 'selected' if wiki and wiki.category_id == category['id'] else '' }}>

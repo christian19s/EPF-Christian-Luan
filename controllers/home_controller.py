@@ -9,6 +9,7 @@ class HomeController(BaseController):
     def __init__(self, app):
         super().__init__(app)
         self.setup_routes()
+        self.base_controller = BaseController(app)
 
     def setup_routes(self):
         self.app.route("/", method="GET", callback=self.show_home)
@@ -23,15 +24,25 @@ class HomeController(BaseController):
     def show_home(self):
         """Handle the home page request"""
         try:
-            # Get recent wikis from your database/service
+            user = self.base_controller.get_current_user()
+            print(f"DEBUG - User in controller: {user}")  # Add this line
+            print(f"DEBUG - User ID: {user.id if user else 'None'}")
             recent_wikis = self.wiki_service.get_recent_wikis(limit=6)
-
-            return self.render("home", recent_wikis=recent_wikis, error=None)
+        
+            return self.render("home", 
+                             recent_wikis=recent_wikis, 
+                             error=None,
+                             user=user)  # Make sure user is passed here
         except Exception as e:
             print(f"Error loading home: {str(e)}")
             return self.render(
-                "home", recent_wikis=[], error="Could not load recent wikis"
+                "home", 
+                recent_wikis=[], 
+                error="Could not load recent wikis",
+                user=None
             )
+
+
 
 
 home_controller = HomeController(home_routes)

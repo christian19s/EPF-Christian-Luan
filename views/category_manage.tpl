@@ -1,29 +1,29 @@
-% rebase('layout', title='Manage Categories')
+% rebase('layout', title='Gerenciar categorias')
 <link rel="stylesheet" href="/static/css/style.css">
 
 <div class="container">
     <div class="header">
-        <h1><i class="fas fa-tags"></i> Manage Categories</h1>
+        <h1><i class="fas fa-tags"></i> Gerenciar Categorias</h1>
         <a href="/categories/create" class="btn btn-primary">
-            <i class="fas fa-plus"></i> New Category
+            <i class="fas fa-plus"></i> Nova Categoria
         </a>
     </div>
 
     % if not categories:
         <div class="empty-state">
             <i class="fas fa-folder-open fa-2x"></i>
-            <p>No categories created yet</p>
+            <p>Nenhuma categoria criada</p>
         </div>
     % else:
         <table class="table">
             <thead>
                 <tr>
-                    <th>Name</th>
+                    <th>Nome</th>
                     <th>Slug</th>
-                    <th>Color</th>
-                    <th>Icon</th>
+                    <th>Cor</th>
+                    <th>Ícone</th>
                     <th>Wikis</th>
-                    <th>Actions</th>
+                    <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
@@ -48,8 +48,8 @@
                         </a>
                         <form method="POST" action="/categories/{{category.id}}/delete" style="display: inline;">
                             <button type="submit" class="btn btn-sm btn-danger" 
-                                    onclick="return confirm('Delete this category? Wikis will become uncategorized.')">
-                                <i class="fas fa-trash"></i> Delete
+                                    onclick="return confirm('Deletar esta categoria?')">
+                                <i class="fas fa-trash"></i> Deletar
                             </button>
                         </form>
                     </td>

@@ -1,11 +1,11 @@
-% rebase('layout', title='User Dashboard')
+% rebase('layout', title='Dashboard')
 <link rel="stylesheet" href="/static/css/dashboard.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://unpkg.com/htmx.org@1.9.6"></script>
 <script src="/static/js/dark-mode.js"></script>
 
 <div class="htmx-indicator">
-    <i class="fas fa-spinner fa-spin"></i> Updating profile...
+    <i class="fas fa-spinner fa-spin"></i> Atualizando perfil...
 </div>
 
 <div class="dashboard-container">
@@ -15,19 +15,7 @@
     % if get('error'):
         <div class="alert alert-error">{{error}}</div>
     % end
-    
-    <div class="dashboard-header">
-        <div class="header-left">
-            <a href="/" class="home-button" title="Return to Home">
-                <i class="fas fa-home"></i>
-            </a>
-            <h1>Your Dashboard</h1>
-        </div>
-        <div class="theme-toggle" id="themeToggle">
-            <i class="fas fa-moon"></i>
-            <span id="themeText">Dark Mode</span>
-        </div>
-    </div>
+
     
     <div class="profile-card">
         <div class="profile-section">
@@ -58,10 +46,10 @@
             <div class="user-info">
                 <h2 class="user-name">{{ user.username }}</h2>
                 <p class="user-email">{{ user.email }}</p>
-                <p class="user-meta">Member since: {{ user.created_at[:10] }}</p>
-                <p class="user-meta">Global Role: <span class="role-tag">{{ user.global_role }}</span></p>
+                <p class="user-meta">Membro desde: {{ user.created_at[:10] }}</p>
+                <p class="user-meta">Papel global: <span class="role-tag">{{ user.global_role }}</span></p>
                 % if user.birthdate:
-                    <p class="user-meta">Birthdate: {{ user.birthdate }}</p>
+                    <p class="user-meta">Data de nascimento: {{ user.birthdate }}</p>
                 % end
             </div>
         </div>
@@ -69,22 +57,22 @@
         <div class="stats-container">
             <div class="stat-card">
                 <div class="stat-value">{{ len(user.owned_wikis) }}</div>
-                <div class="stat-label">Wikis Created</div>
+                <div class="stat-label">Wikis Criadas</div>
             </div>
             
             <div class="stat-card">
                 <div class="stat-value">{{ len(edited_pages) }}</div>
-                <div class="stat-label">Pages Edited</div>
+                <div class="stat-label">Páginas Editadas</div>
             </div>
             
             <div class="stat-card">
                 <div class="stat-value">{{ len(user.wiki_roles) }}</div>
-                <div class="stat-label">Collaborations</div>
+                <div class="stat-label">Colaborações</div>
             </div>
         </div>
         
         <div class="recent-activity">
-            <h3 class="section-title">Recent Activity</h3>
+            <h3 class="section-title">Atividade recente</h3>
             % if edited_pages:
                 <ul class="activity-list">
                     % for page in edited_pages:
@@ -109,37 +97,37 @@
             % else:
                 <div class="empty-activity">
                     <i class="fas fa-inbox"></i>
-                    <p>No recent activity yet</p>
+                    <p>Sem atividade recente</p>
                 </div>
             % end
         </div>
     </div>
     
     <div class="account-actions">
-        <h3 class="section-title">Account Settings</h3>
+        <h3 class="section-title">Configurações</h3>
         <div class="action-grid">
             <a href="/user/edit" class="action-card">
                 <div class="action-icon">
                     <i class="fas fa-user-edit"></i>
                 </div>
-                <h4>Edit Profile</h4>
-                <p>Update your personal information</p>
+                <h4>Editar Perfil</h4>
+                <p>Atualize suas informações pessoais</p>
             </a>
             
             <a href="/change-password" class="action-card">
                 <div class="action-icon">
                     <i class="fas fa-lock"></i>
                 </div>
-                <h4>Change Password</h4>
-                <p>Set a new password for your account</p>
+                <h4>Trocar a senha</h4>
+                <p>Use uma nova senha para sua conta</p>
             </a>
             
             <a href="/wikis" class="action-card">
                 <div class="action-icon">
                     <i class="fas fa-book"></i>
                 </div>
-                <h4>Your Wikis</h4>
-                <p>Manage wikis you created</p>
+                <h4>Suas Wikis</h4>
+                <p>Gerencie wikis que você criou</p>
             </a>
             
             <a href="/logout" class="action-card">
@@ -147,7 +135,7 @@
                     <i class="fas fa-sign-out-alt"></i>
                 </div>
                 <h4>Log Out</h4>
-                <p>Securely end your session</p>
+                <p>Encerre sua sessão</p>
             </a>
         </div>
     </div>

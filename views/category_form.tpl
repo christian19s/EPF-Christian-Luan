@@ -1,11 +1,11 @@
-% rebase('layout', title=('Edit Category' if category else 'Create Category'))
+% rebase('layout', title=('Editar Categoria' if category else 'Criar Categoria'))
 <link rel="stylesheet" href="/static/css/style.css">
 
 <div class="container">
     <div class="header">
-        <h1>{{ 'Edit Category' if category else 'Create New Category' }}</h1>
+        <h1>{{ 'Editar Categoria' if category else 'Criar Nova Categoria' }}</h1>
         <a href="/categories/manage" class="btn">
-            <i class="fas fa-arrow-left"></i> Back to Categories
+            <i class="fas fa-arrow-left"></i> Voltar para Categorias
         </a>
     </div>
 
@@ -19,7 +19,7 @@
 
     <form method="POST" action="{{ request.path }}">
         <div class="form-group">
-            <label for="name">Category Name</label>
+            <label for="name">Nome da Categoria</label>
             <input type="text" id="name" name="name" 
                    value="{{ category.name if hasattr(category, 'name') else (form_data['name'] if 'form_data' in locals() and 'name' in form_data else '') }}" 
                    required>
@@ -30,17 +30,17 @@
             <input type="text" id="slug" name="slug" 
                    value="{{ category.slug if hasattr(category, 'slug') else (form_data['slug'] if 'form_data' in locals() and 'slug' in form_data else '') }}" 
                    required>
-            <small>Lowercase letters, numbers, and hyphens only</small>
+            <small>Letras minúsculas, números e hífens somente</small>
         </div>
 
         <div class="form-group">
-            <label for="description">Description</label>
+            <label for="description">Descrição</label>
             <textarea id="description" name="description" rows="3">{{ category.description if hasattr(category, 'description') else (form_data['description'] if 'form_data' in locals() and 'description' in form_data else '') }}</textarea>
         </div>
 
         <div class="form-row">
             <div class="form-group">
-                <label for="color">Color</label>
+                <label for="color">Cor</label>
                 <div class="color-picker">
                     <input type="color" id="color" name="color" 
                            value="{{ category.color if hasattr(category, 'color') else (form_data['color'] if 'form_data' in locals() and 'color' in form_data else '#6b7280') }}">
@@ -51,7 +51,7 @@
             </div>
 
             <div class="form-group">
-                <label for="icon">Icon</label>
+                <label for="icon">Ícone</label>
                 <select id="icon" name="icon" required>
                     % icons = ['folder', 'book', 'tag', 'hashtag', 'star', 'database', 'globe', 'code', 'image', 'file', 'archive', 'box']
                     % current_icon = category.icon if hasattr(category, 'icon') else (form_data['icon'] if 'form_data' in locals() and 'icon' in form_data else 'folder')
@@ -67,9 +67,9 @@
 
         <div class="form-footer">
             <button type="submit" class="btn btn-primary">
-                {{ 'Update Category' if category else 'Create Category' }}
+                {{ 'Atualizar Categoria' if category else 'Criar Categoria' }}
             </button>
-            <a href="/categories/manage" class="btn">Cancel</a>
+            <a href="/categories/manage" class="btn">Cancelar</a>
         </div>
     </form>
 </div>

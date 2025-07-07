@@ -1,4 +1,4 @@
-% rebase('layout', title='All Wikis')
+% rebase('layout', title='Todas as Wikis')
 % categories = get('categories',[])
 % user = get('user',None)
 % error = get('error',None)
@@ -7,22 +7,19 @@
 
 <div class="container">
     <div class="wiki-header">
-        <h1><i class="fas fa-sitemap"></i> Wiki Directory</h1>
+        <h1><i class="fas fa-sitemap"></i> Diretório de Wikis</h1>
         <div class="header-actions">
             % if user and user.can(PermissionSystem.CREATE_WIKI):
                 <a href="/wikis/create" class="btn btn-sm btn-primary">
-                    <i class="fas fa-plus"></i> New Wiki
+                    <i class="fas fa-plus"></i> Nova Wiki
                 </a>
             % end
             % if user and user.can(PermissionSystem.MANAGE_CATEGORIES):
                 <a href="/categories/manage" class="btn btn-sm btn-secondary">
-                    <i class="fas fa-tags"></i> Manage Categories
+                    <i class="fas fa-tags"></i> Gerenciar Categorias
                 </a>
             % end
-            <button id="themeToggle" class="btn btn-sm">
-                <i class="fas fa-moon"></i>
-                <span id="themeText">Dark Mode</span>
-            </button>
+
         </div>
     </div>
 
@@ -33,10 +30,10 @@
     % if not categories:
         <div class="empty-state">
             <i class="fas fa-folder-open fa-2x"></i>
-            <p>No wikis created yet</p>
+            <p>Nenhuma wiki criada ainda</p>
             % if user and user.can(PermissionSystem.CREATE_PAGE):
                 <a href="/wikis/create" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Create First Wiki
+                    <i class="fas fa-plus"></i> Criar Primeira Wiki
                 </a>
             % end
         </div>
@@ -74,7 +71,7 @@
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     <a href="/wikis/{{wiki['slug']}}/delete" title="Delete"
-                                        onclick="return confirm('Delete this wiki permanently?')">
+                                        onclick="return confirm('Deletar esta wiki permanentemente?')">
                                         <i class="fas fa-trash"></i>
                                     </a>
                                 </div>

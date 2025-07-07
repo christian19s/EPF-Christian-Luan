@@ -1,15 +1,15 @@
-% rebase('layout', title='Wiki Categories')
+% rebase('layout', title='Categorias de Wiki')
 <link rel="stylesheet" href="/static/css/style.css">
 
 <div class="container">
     <div class="header">
-        <h1><i class="fas fa-tags"></i> Wiki Categories</h1>
+        <h1><i class="fas fa-tags"></i> Categorias de Wiki</h1>
     </div>
 
     % if not categories:
         <div class="empty-state">
             <i class="fas fa-folder-open fa-2x"></i>
-            <p>No categories available</p>
+            <p>Nenhuma categoria disponível</p>
         </div>
     % else:
         <div class="category-grid">
@@ -33,7 +33,7 @@
                     % end
                 </ul>
                 % else:
-                <p class="empty">No wikis in this category</p>
+                <p class="empty">Nenhuma wiki nesta categoria</p>
                 % end
             </div>
             % end

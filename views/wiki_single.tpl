@@ -7,7 +7,7 @@
         <h1><i class="fas fa-book"></i> {{wiki.name}}</h1>
         <p class="wiki-description">{{wiki.description}}</p>
         <div class="wiki-meta">
-            <span>Created by {{wiki.owner_username}} on {{wiki.created_at[:10]}}</span>
+            <span>Criado por {{wiki.owner_username}} on {{wiki.created_at[:10]}}</span>
         </div>
         
         % if wiki.category_id:
@@ -20,10 +20,10 @@
         % if user and (user.id == wiki.owner_id or user.can(PermissionSystem.MANAGE_WIKI, wiki.id)):
             <div class="wiki-actions">
                 <a href="/wikis/{{wiki.slug}}/edit" class="btn btn-secondary">
-                    <i class="fas fa-edit"></i> Edit Wiki
+                    <i class="fas fa-edit"></i> Editar Wiki
                 </a>
                 <a href="/wikis/{{wiki.slug}}/pages/create" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> New Page
+                    <i class="fas fa-plus"></i> Nova Página
                 </a>
             </div>
         % end
@@ -32,11 +32,11 @@
     % if not pages:
         <div class="empty-state">
             <i class="fas fa-file-alt fa-3x"></i>
-            <h3>No pages created yet</h3>
-            <p>Get started by creating your first page</p>
+            <h3>Nenhuma página criada ainda</h3>
+            <p>Comece criando sua próxima página</p>
             % if user and user.can(PermissionSystem.CREATE_PAGE, wiki.id):
                 <a href="/wikis/{{wiki.slug}}/pages/create" class="btn btn-primary">
-                    Create First Page
+                    Criar Primeira Página
                 </a>
             % end
         </div>
@@ -50,7 +50,7 @@
                 <div class="page-content">
                     <h3>{{page.title}}</h3>
                     <div class="page-meta">
-                        <span>Created on {{page.created_at[:10]}}</span>
+                        <span>Criado em {{page.created_at[:10]}}</span>
                     </div>
                 </div>
             </a>

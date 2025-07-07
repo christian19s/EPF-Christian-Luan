@@ -1,4 +1,4 @@
-from bottle import response, static_file
+from bottle import response, request, static_file
 
 from data import USER_UPLOADS
 
@@ -57,3 +57,10 @@ class BaseController:
 
     def serve_user_uploads(self, filename):
         return static_file(filename, root=str(USER_UPLOADS))
+
+    def get_current_user(self):
+        """Get authenticated user from session"""
+        user_id = request.get_cookie("user_id", secret=SECRET_KEY)
+        if user_id:
+            return UserService.get_user_by_id(int(user_id))
+        return None

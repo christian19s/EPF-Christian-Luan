@@ -252,19 +252,15 @@ class UserController(BaseController):
 
     def logout(self):
         """Handle user logout by clearing session cookies and redirecting"""
-       # Clear the user_id cookie
         response.delete_cookie("user_id", path="/")
     
-        # Optionally clear any other auth-related cookies
-        response.delete_cookie("session_token", path="/")  # if you use additional session tokens
+        response.delete_cookie("session_token", path="/") 
     
-        # Add a flash message (if your system supports it)
         try:
-            flash("You have been logged out successfully")  # Requires flash messaging setup
+            flash("You have been logged out successfully") 
         except:
             pass
     
-        # Redirect to login page with a 303 See Other status to prevent form resubmission
         response.status = 303
         response.headers["Location"] = "/login"
         return response
@@ -292,23 +288,22 @@ class UserController(BaseController):
                 return self.render("change_password", 
                            success="Password changed successfully",
                            error=None,
-                           user_password=new_password)  # Show the new password
+                           user_password=new_password) 
             except AuthenticationFailed:
                 return self.render("change_password",
                            error="Current password is incorrect",
                            success=None,
-                           user_password=current_password)  # Keep showing what they typed
+                           user_password=current_password) 
             except Exception as e:
                 return self.render("change_password",
                            error=f"Error: {str(e)}",
                            success=None,
                            user_password=current_password)
 
-        # For GET requests, show the current password (SECURITY RISK!)
         return self.render("change_password", 
                        error=None, 
                        success=None,
-                       user_password=user.password_hash)  # Or use a decrypted version if available
+                       user_password=user.password_hash) 
 
     def register(self):
         """Handle user registration"""

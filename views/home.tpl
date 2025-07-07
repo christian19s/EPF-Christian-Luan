@@ -10,14 +10,23 @@
     <div class="header">
         <p class="title">WikiTree</p>
         <img src="/static/img/placeholder.jpg" alt="WikiTree logo" style="height: 80px">
-        <button id="btnLogin" class="login-button">
-            <i class="fas fa-sign-in-alt"></i> Login
-        </button>
+        % if user:
+            <button id="btnDashboard" class="login-button">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </button>
+            <button id="btnLogout" class="login-button" style="margin-left: 10px;">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        % else:
+            <button id="btnLogin" class="login-button">
+                <i class="fas fa-sign-in-alt"></i> Login
+            </button>
+        % end
     </div>
     
     <div class="main">
         <div class="link-table">
-            <h3><i class="fas fa-clock"></i> Recent Wikis</h3>
+            <h3><i class="fas fa-clock"></i>Wikis Recentes</h3>
             <div class="wiki-grid">
                 % if recent_wikis:
                     % for wiki in recent_wikis:
@@ -46,26 +55,26 @@
                 % else:
                     <div class="empty-wikis">
                         <i class="fas fa-book"></i>
-                        <p>No wikis created yet</p>
-                        <a href="/wikis/create" class="create-link">Be the first to create one!</a>
+                        <p>Nenhuma wiki encontrada</p>
+                        <a href="/wikis/create" class="create-link">Criar uma wiki agora</a>
                     </div>
                 % end
             </div>
         </div>
         
         <div class="main-p">
-            <h2>Welcome to WikiTree</h2>
-            <p>Create and collaborate on wikis with your community. WikiTree provides an easy way to organize and share knowledge in a tree-like structure.</p>
-            <p>Start by creating your own wiki or browse existing ones to contribute.</p>
+            <h2>Bem-vindo a WikiTree</h2>
+            <p>Crie wikis e contribua com wikis existentes. </p>
+            <p>Comece criando sua própria ou pesquise por existentes para colaborar.</p>
         </div>
     </div>
     
     <div class="wiki-buttons">
         <button id="btnCreate" class="create-button">
-            <i class="fas fa-plus"></i> Create Wiki
+            <i class="fas fa-plus"></i> Criar Wiki
         </button>
         <button id="btnView" class="view-button">
-            <i class="fas fa-book"></i> Browse All
+            <i class="fas fa-book"></i> Todas as Wikis
         </button>
     </div>
     
@@ -78,16 +87,44 @@
     </footer>
     
     <script>
-        document.getElementById('btnCreate').addEventListener('click', function() {
-            window.location.href = '/wikis/create';
-        });
-        
-        document.getElementById('btnView').addEventListener('click', function() {
-            window.location.href = '/wikis';
-        });
-        
-        document.getElementById('btnLogin').addEventListener('click', function() {
-            window.location.href = '/login';
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle Create Wiki button
+            document.getElementById('btnCreate')?.addEventListener('click', function() {
+                window.location.href = '/wikis/create';
+            });
+            
+            // Handle View Wikis button
+            document.getElementById('btnView')?.addEventListener('click', function() {
+                window.location.href = '/wikis';
+            });
+            
+            // Handle Login/Dashboard buttons conditionally
+            const btnLogin = document.getElementById('btnLogin');
+            const btnDashboard = document.getElementById('btnDashboard');
+            const btnLogout = document.getElementById('btnLogout');
+            
+            if (btnLogin) {
+                btnLogin.addEventListener('click', function() {
+                    window.location.href = '/login';
+                });
+            }
+            
+            if (btnDashboard) {
+                btnDashboard.addEventListener('click', function() {
+                    window.location.href = '/dashboard';
+                });
+            }
+            
+            if (btnLogout) {
+                btnLogout.addEventListener('click', function() {
+                    window.location.href = '/logout';
+                });
+            }
+            
+            // Handle theme toggle
+            document.getElementById('themeToggle')?.addEventListener('click', function() {
+                // Your theme toggle logic here
+            });
         });
     </script>
 </body>
